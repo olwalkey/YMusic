@@ -1,6 +1,9 @@
 from munch import munchify
+
 import psycopg as pg
+import psycopg_pool
 import psycopg_binary as pg_binary
+
 import yaml
 
 with open("./config.yaml") as f:
@@ -29,12 +32,20 @@ class database:
             time date
           )             
           """)
+        cursor.execute("""
+          CREATE TABLE IF NOT EXISTS queue (
+            id serial PRIMARY KEY,
+            url text,
+            downloaded bool,
+            downloaded_data relation
+          )             
+          """)
         self.conn.commit()
     except pg.Error as e:
       print(f"Error creating table: {e}")
   
   
-  def write_to_db(self, title, url, download_path, elapsed):
+  def finished_download_to_db(self, title, url, download_path, elapsed):
     self.db_create()
     with self.conn.cursor() as cursor:
       cursor.execute("""
@@ -43,5 +54,8 @@ class database:
         """, [title, url, download_path, elapsed])
       self.conn.commit()
       self.conn.close()
+
+  def queue_to_db(self):
+    pass
+    
       
-# db.db_create()

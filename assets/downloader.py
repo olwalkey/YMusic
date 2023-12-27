@@ -1,9 +1,6 @@
-import os
 import yt_dlp
 from munch import munchify
-from yt_dlp.utils import DownloadError
 from typing import Optional
-from json import JSONEncoder
 
 
 if __name__ == 'downloader':
@@ -119,7 +116,7 @@ class Downloader:
       ydl.download(urls)
       print(self.getjson())
       db = database()
-      db.write_to_db(self.title, self.url, self.download_path, self.time_elapse)
+      db.finished_download_to_db(self.title, self.url, self.download_path, self.time_elapse)
     
   def getjson(self):
     data = {
