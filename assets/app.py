@@ -1,6 +1,6 @@
 import yaml
-from flask import Flask, jsonify
-from flask_restful import Resource, Api
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 from munch import munchify, unmunchify
 from downloader import Downloader, queue
 import db
@@ -13,36 +13,37 @@ with open('./config.yaml') as stream:
         print(exc)
 config = munchify(yamlfile)
 
-app = Flask(__name__)
-api = Api(app)
+app = FastAPI()
 youtube = Downloader()
 
-class Download(Resource):
-  def __init__(self):
-      self.database = db.Database()
+class Download:
+    def __init__(self):
+        self.database = db.Database()
 
-  async def get(self, url):
-    try:
-      self.database.new_queue(downloaded=False, url=url)
-      await queue.start
-      return {'message': 'Download request received and queued'}
-    except Exception as e:
-      return {'message': f'Error: {e}'}
-    
+    async def download(self, url):
+        try:
+            self.database.new_queue(downloaded=False, url=url)
+            await queue.start
+            return {'message': 'Download request received and queued'}
+        except Exception as e:
+            return {'message': f'Error: {e}'}
 
-class DownloadInfo(Resource):
-    def get(self):
-        data = youtube.getjson()
-        data = unmunchify(data)
-        return jsonify(data)
+download = Download()
 
-class Ping(Resource):
-    def get(self):
-        return {'ping': 'pong'}
+@app.get('/download/{url}')
+async def download_route(url: str):
+    return await download.download(url)
 
-api.add_resource(Download, '/download/<string:url>')
-api.add_resource(Ping, '/ping')
-api.add_resource(DownloadInfo, '/getjson')
+@app.get('/ping')
+async def ping():
+    return {'ping': 'pong'}
+
+@app.get('/getjson')
+async def get_json():
+    data = youtube.getjson()
+    data = unmunchify(data)
+    return JSONResponse(content=data)
 
 if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=config.port)
+    import uvicorn
+    uvicorn.run(app, host='0.0.0.0', port=config.port)
