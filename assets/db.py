@@ -1,61 +1,101 @@
+# db.py manages database
+# app.py requires
+from sqlalchemy import create_engine, Column, String, Integer, Sequence, ForeignKey, TIMESTAMP, Boolean
+from sqlalchemy.orm import declarative_base, Session
+from sqlalchemy.sql import func
+
+Base = declarative_base()
+
+class downloaded(Base):
+  __tablename__ = 'downloaded'
+  id = Column(Integer, autoincrement=True, primary_key=True)
+  title = Column(String)
+  url = Column(String)
+  path = Column(String)
+  elapsed = Column(String)
+  create_time = Column(TIMESTAMP, default=func.now())
+
+class albums(Base):
+  __tablename__ = 'albums'
+  id = Column(Integer, autoincrement=True, primary_key=True)
+  title = Column(String)
+  url = Column(String)
+  create_time = Column(TIMESTAMP, default=func.now())
+
+class albums(Base):
+  __tablename__ = 'albums'
+  id = Column(Integer, autoincrement=True, primary_key=True)
+  url = Column(String)
+  downloaded = Column(String)
+  create_time = Column(TIMESTAMP, default=func.now())
+
+
 from munch import munchify
-
-import psycopg as pg
-import psycopg_pool
-import psycopg_binary as pg_binary
-
 import yaml
-
-with open("./config.yaml") as f:
-  try:
+try:
+  with open("./config.yaml") as f:
+      yamlfile=yaml.safe_load(f)
+except yaml.YAMLError:
+  with open('../config.yaml') as f:
     yamlfile=yaml.safe_load(f)
-  except yaml.YAMLError as exc:
-    print(exc)
+
 config = munchify(yamlfile)
 
 class database:
-  conn = None
+  engine = None
+  session = None
 
   def __init__(self, host:str=config.db.host, port:int=config.db.port, user:str=config.db.user, password:str=config.db.password, database:str=config.db.db):
-    self.conn = pg.connect(f"host={host} port={port} dbname={database} user={user} password={password}")
+    self.connect(host, port, user, password, database)
+    
+  def connect(self, host, port, user, password, database):
+    try:
+      self.engine = create_engine(
+        url=f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+        )
+      self.session = Session(bind=self.engine)
+    except Exception as e:
+      print(f"Error connecting to the database: {e}")
+      exit()
+  
+  def __del__(self):
+      if self.conn is not None:
+          self.conn.close()
 
   def db_create(self):
     try:
-      with self.conn.cursor() as cursor:
-        cursor.execute("""
-          CREATE TABLE IF NOT EXISTS downloaded (
-            id serial PRIMARY KEY,
-            title text,
-            url text,
-            path text,
-            elapsed text,
-            time date
-          )             
-          """)
-        cursor.execute("""
-          CREATE TABLE IF NOT EXISTS queue (
-            id serial PRIMARY KEY,
-            url text,
-            downloaded bool,
-            downloaded_data relation
-          )             
-          """)
-        self.conn.commit()
-    except pg.Error as e:
-      print(f"Error creating table: {e}")
-  
-  
-  def finished_download_to_db(self, title, url, download_path, elapsed):
-    self.db_create()
-    with self.conn.cursor() as cursor:
-      cursor.execute("""
-        INSERT INTO downloaded (title, url, path, elapsed, time)
-        VALUES (%s, %s, %s, %s, NOW());
-        """, [title, url, download_path, elapsed])
-      self.conn.commit()
-      self.conn.close()
+      Base.metadata.create_all(self.engine)
+    except Exception as e:
+      print(f'An Error Occured: {e}')
+      exit()
 
-  def queue_to_db(self):
-    pass
+  def reconnect(self):
+    self.__del__()
+    self.connect()
+
+
+class sql:  
+  db = database
+  def write_to_videoDB(self, title, url, download_path, elapsed):
+    self.db.db_create()
     
-      
+    new_downloaded = downloaded(title, url, download_path, elapsed)
+    
+    self.db.session.add(new_downloaded)
+    self.db.session.commit()
+  
+  def write_to_albumDB(self, title, url):
+    self.db.db_create()
+    
+    new_album = albums(title, url)
+    
+    self.db.session.add(new_album)
+    self.db.session.commit()
+
+  def new_queue(self, downloaded, url):
+    self.db.db_create()
+    
+    new_album = (url, downloaded)
+    
+    self.db.session.add(new_album)
+    self.db.session.commit()
