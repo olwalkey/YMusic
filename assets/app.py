@@ -23,10 +23,11 @@ youtube = Downloader()
 
 
 class Download(Resource):
-  db.database()
-  
-
-
+  database=db.Database
+  sql = db.SQL
+  def get(self, url):
+    self.sql.new_queue(downloaded=False, url=url)
+    
 
 
 class DownloadInfo(Resource):
