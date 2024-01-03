@@ -35,7 +35,7 @@ class Queue(Base):
   __tablename__ = 'queue'
   id = Column(Integer, autoincrement=True, primary_key=True)
   url = Column(String)
-  downloaded = Column(String)
+  downloaded = Column(Boolean)
   create_time = Column(TIMESTAMP, default=func.now())
 
 
@@ -73,9 +73,10 @@ class Database:
     self.connect()
 
 
-class SQL:  
-  db = Database
-  
+class SQL:
+  def __init__(self):
+    self.db = Database
+
   def write_to_videoDB(self, title, url, download_path, elapsed):
     self.db.db_create()
     
