@@ -21,7 +21,9 @@ class Download:
         self.database = db.Database()
 
     async def download(self, url):
-        print('step 0')
+        data = db.Database()
+        await data.db_create()
+
         try:
           await self.database.new_queue(downloaded=False, url=url)
           q = queue()

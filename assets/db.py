@@ -45,7 +45,7 @@ class Database:
     def connect(self, host:config.db.host, port:config.db.port, user:config.db.user, password:config.db.password, database:config.db.db):
         self.engine = create_async_engine(
             f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}",
-            echo=True  # Set to False in production
+            echo=False  # Set to False in production
         )
 
         self.async_session = sessionmaker(
@@ -61,14 +61,14 @@ class Database:
 
     async def new_queue(self, downloaded, url):
         async with self.async_session() as session:
-            new_queue = Queue(url=url, downloaded=downloaded)
-            session.add(new_queue)
-            await session.commit()
+            async with session.begin():
+                new_queue = Queue(url=url, downloaded=downloaded)
+                session.add(new_queue)
 
     async def db_create(self):
-        async with self.async_session() as session:
-            await session.run_sync(Base.metadata.create_all, self.engine)
-
+        async with self.engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+                
     async def reconnect(self):
         await self.async_session.close()
         self.connect()
