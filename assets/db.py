@@ -95,7 +95,7 @@ class SQL:
   def new_queue(self, downloaded, url):
     self.db.db_create()
     
-    new_album = Queue(url=url, downloaded=downloaded)
+    new_queue = Queue(url=url, downloaded=downloaded)
     
-    self.db.session.add(new_album)
+    self.db.session.add(new_queue)
     self.db.session.commit()
