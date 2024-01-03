@@ -35,7 +35,7 @@ class Queue(Base):
   __tablename__ = 'queue'
   id = Column(Integer, autoincrement=True, primary_key=True)
   url = Column(String)
-  downloaded = Column(Boolean)
+  downloaded = Column(Boolean, default=False)
   create_time = Column(TIMESTAMP, default=func.now())
 
 
@@ -46,7 +46,7 @@ class Database:
   def __init__(self, host:str=config.db.host, port:int=config.db.port, user:str=config.db.user, password:str=config.db.password, database:str=config.db.db):
     self.connect(host, port, user, password, database)
     
-  def connect(self, host, port, user, password, database):
+  def connect(self, host:str=config.db.host, port:int=config.db.port, user:str=config.db.user, password:str=config.db.password, database:str=config.db.db):
     try:
       self.engine = create_engine(
         url=f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
@@ -71,32 +71,34 @@ class Database:
   def reconnect(self):
     self.__del__()
     self.connect()
+  
+  #* Read from database
+  def QueueNotDone(self):
+    queued_items = self.session.query(Queue).filter(Queue.downloaded.is_(False)).order_by(Queue.create_time.desc()).all()
 
 
-class SQL:
-  def __init__(self):
-    self.db = Database
+  #* Write to Database
 
   def write_to_videoDB(self, title, url, download_path, elapsed):
-    self.db.db_create()
+    self.db_create()
     
     new_downloaded = Downloaded(title=title, url=url, download_path=download_path, elapsed=elapsed)
     
-    self.db.session.add(new_downloaded)
-    self.db.session.commit()
+    self.session.add(new_downloaded)
+    self.session.commit()
   
   def write_to_albumDB(self, title, url):
-    self.db.db_create()
+    self.db_create()
     
     new_album = Albums(title=title, url=url)
     
-    self.db.session.add(new_album)
-    self.db.session.commit()
+    self.session.add(new_album)
+    self.session.commit()
 
   def new_queue(self, downloaded, url):
-    self.db.db_create()
+    self.db_create()
     
     new_queue = Queue(url=url, downloaded=downloaded)
     
-    self.db.session.add(new_queue)
-    self.db.session.commit()
+    self.session.add(new_queue)
+    self.session.commit()
