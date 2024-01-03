@@ -30,13 +30,13 @@ class MyLogger:
 
 
 class queue:
-  
+
   started=False
-  
+
   async def start(self):
+    db = Database()
     if not self.started:
       pass
-
 
 class Downloader:
   Started=False
@@ -121,9 +121,10 @@ class Downloader:
     with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
       ydl.download(urls)
       print(self.getjson())
-      db = database()
-      db.finished_download_to_db(self.title, self.url, self.download_path, self.time_elapse)
-    
+      db = Database()
+      myqueue = db.QueueNotDone()
+      # db.finished_download_to_db(self.title, self.url, self.download_path, self.time_elapse)
+      
   def getjson(self):
     data = {
       'WebUse': {
