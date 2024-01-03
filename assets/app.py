@@ -22,9 +22,11 @@ class Download:
 
     async def download(self, url):
         try:
-            self.database.new_queue(downloaded=False, url=url)
-            await queue.start
+            await self.database.new_queue(downloaded=False, url=url)
+            await queue.start()
             return {'message': 'Download request received and queued'}
+        except HTTPException as e:
+          return {'message': f'HTTPException: {e}'}
         except Exception as e:
             return {'message': f'Error: {e}'}
 
