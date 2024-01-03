@@ -32,11 +32,12 @@ class MyLogger:
 class queue:
 
   started=False
+  db = Database()
 
-  async def start(self):
-    db = Database()
-    if not self.started:
-      pass
+  async def fill(self):
+    self.myqueue = await self.db.QueueNotDone()
+    for queue_item in self.myqueue:
+      print(f"Queue ID: {queue_item.id}, URL: {queue_item.url}, Downloaded: {queue_item.downloaded}, Created: {queue_item.create_time}")
 
 class Downloader:
   Started=False
@@ -122,7 +123,6 @@ class Downloader:
       ydl.download(urls)
       print(self.getjson())
       db = Database()
-      myqueue = db.QueueNotDone()
       # db.finished_download_to_db(self.title, self.url, self.download_path, self.time_elapse)
       
   def getjson(self):

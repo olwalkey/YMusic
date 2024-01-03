@@ -1,104 +1,84 @@
-# db.py manages database
-# app.py requires
-from sqlalchemy import create_engine, Column, String, Integer, Sequence, ForeignKey, TIMESTAMP, Boolean
-from sqlalchemy.orm import declarative_base, Session
+from sqlalchemy import create_engine, Column, String, Integer, Sequence, TIMESTAMP, Boolean, select
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 from munch import munchify
 import yaml
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 Base = declarative_base()
 
 with open("./config.yaml") as f:
-  yamlfile=yaml.safe_load(f)
+    yamlfile = yaml.safe_load(f)
 config = munchify(yamlfile)
 
-
 class Downloaded(Base):
-  __tablename__ = 'downloaded'
-  id = Column(Integer, autoincrement=True, primary_key=True)
-  title = Column(String)
-  url = Column(String)
-  path = Column(String)
-  elapsed = Column(String)
-  create_time = Column(TIMESTAMP, default=func.now())
-
+    __tablename__ = 'downloaded'
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    title = Column(String)
+    url = Column(String)
+    path = Column(String)
+    elapsed = Column(String)
+    create_time = Column(TIMESTAMP, default=func.now())
 
 class Albums(Base):
-  __tablename__ = 'albums'
-  id = Column(Integer, autoincrement=True, primary_key=True)
-  title = Column(String)
-  url = Column(String)
-  create_time = Column(TIMESTAMP, default=func.now())
-
+    __tablename__ = 'albums'
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    title = Column(String)
+    url = Column(String)
+    create_time = Column(TIMESTAMP, default=func.now())
 
 class Queue(Base):
-  __tablename__ = 'queue'
-  id = Column(Integer, autoincrement=True, primary_key=True)
-  url = Column(String)
-  downloaded = Column(Boolean, default=False)
-  create_time = Column(TIMESTAMP, default=func.now())
-
+    __tablename__ = 'queue'
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    url = Column(String, unique=True)
+    downloaded = Column(Boolean, default=False)
+    create_time = Column(TIMESTAMP, default=func.now())
 
 class Database:
-  engine = None
-  session = None
+    engine = None
+    async_session = None
 
-  def __init__(self, host:str=config.db.host, port:int=config.db.port, user:str=config.db.user, password:str=config.db.password, database:str=config.db.db):
-    self.connect(host, port, user, password, database)
-    
-  def connect(self, host:str=config.db.host, port:int=config.db.port, user:str=config.db.user, password:str=config.db.password, database:str=config.db.db):
-    try:
-      self.engine = create_engine(
-        url=f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+    def __init__(self):
+        self.connect(config.db.host, config.db.port, config.db.user, config.db.password, config.db.db)
+
+    def connect(self, host:config.db.host, port:config.db.port, user:config.db.user, password:config.db.password, database:config.db.db):
+        self.engine = create_async_engine(
+            f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{database}",
+            echo=True  # Set to False in production
         )
-      self.session = Session(bind=self.engine)
-    except Exception as e:
-      print(f"Error connecting to the database: {e}")
-      exit()
-  
-  def __del__(self):
-    if hasattr(self, 'session') and self.session:
-      self.session.close()
-      del self.session
-    
-  def db_create(self):
-    try:
-      Base.metadata.create_all(self.engine)
-    except Exception as e:
-      print(f'An Error Occured: {e}')
-      exit()
 
-  def reconnect(self):
-    self.__del__()
-    self.connect()
-  
-  #* Read from database
-  def QueueNotDone(self):
-    queued_items = self.session.query(Queue).filter(Queue.downloaded.is_(False)).order_by(Queue.create_time.desc()).all()
+        self.async_session = sessionmaker(
+            bind=self.engine, expire_on_commit=False, class_=AsyncSession
+        )
 
+    async def QueueNotDone(self):
+        async with self.async_session() as session:
+            queued_items = await session.execute(
+                select(Queue).filter(Queue.downloaded.is_(False)).order_by(Queue.create_time.desc())
+            )
+            return queued_items.scalars().all()
 
-  #* Write to Database
+    async def new_queue(self, downloaded, url):
+        async with self.async_session() as session:
+            new_queue = Queue(url=url, downloaded=downloaded)
+            session.add(new_queue)
+            await session.commit()
 
-  def write_to_videoDB(self, title, url, download_path, elapsed):
-    self.db_create()
-    
-    new_downloaded = Downloaded(title=title, url=url, download_path=download_path, elapsed=elapsed)
-    
-    self.session.add(new_downloaded)
-    self.session.commit()
-  
-  def write_to_albumDB(self, title, url):
-    self.db_create()
-    
-    new_album = Albums(title=title, url=url)
-    
-    self.session.add(new_album)
-    self.session.commit()
+    async def db_create(self):
+        async with self.async_session() as session:
+            await session.run_sync(Base.metadata.create_all, self.engine)
 
-  def new_queue(self, downloaded, url):
-    self.db_create()
-    
-    new_queue = Queue(url=url, downloaded=downloaded)
-    
-    self.session.add(new_queue)
-    self.session.commit()
+    async def reconnect(self):
+        await self.async_session.close()
+        self.connect()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        await self.async_session.close()
+        if exc_type is not None:
+            raise
+
+# Your other methods in Database class can also be converted to async methods.
