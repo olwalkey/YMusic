@@ -4,7 +4,7 @@ from typing import Optional
 
 
 if __name__ == 'downloader':
-  from db import database
+  from db import Database
 else:
   pass
 
@@ -29,7 +29,13 @@ class MyLogger:
       pass
 
 
-
+class queue:
+  
+  started=False
+  
+  async def start(self):
+    if not self.started:
+      pass
 
 
 class Downloader:
