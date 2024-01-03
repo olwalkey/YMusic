@@ -55,10 +55,20 @@ class Database:
     async def QueueNotDone(self):
         async with self.async_session() as session:
             queued_items = await session.execute(
-                select(Queue).filter(Queue.downloaded.is_(False)).order_by(Queue.create_time.desc())
+                select(Queue).filter(Queue.downloaded.is_(False)).order_by(Queue.create_time.asc())
             )
             return queued_items.scalars().all()
-
+    
+    async def mark_as_downloaded(self, url):
+      async with self.async_session() as session:
+        query = session.query(Queue)
+        query = query.filter(Queue.url == url)
+        await session.execute(
+            query.update({Queue.downloaded: True})
+        )
+    
+        await session.commit()
+    
     async def new_queue(self, downloaded, url):
         async with self.async_session() as session:
             async with session.begin():
@@ -80,5 +90,3 @@ class Database:
         await self.async_session.close()
         if exc_type is not None:
             raise
-
-# Your other methods in Database class can also be converted to async methods.
