@@ -23,11 +23,17 @@ class Download:
     async def download(self, url):
         data = db.Database()
         await data.db_create()
-
         try:
+          
           await self.database.new_queue(downloaded=False, url=url)
+          
           q = queue()
-          await q.fill()
+          self.myqueue = await q.fill()
+          queue_list = {}
+          for queue_item in self.myqueue:
+            queue_list[queue_item.id] = queue_item.url
+          print(queue_list)          
+          
           return {'message': 'Download request received and queued'}
         except IntegrityError as e:
           return {'message': f'Duplicate Entry. Link already exists!'}
