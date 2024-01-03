@@ -7,5 +7,5 @@ db:
   port: 5432
   db: youtube
   user: postgres
-  password: defaultpassword
+  password: Testpass
   
