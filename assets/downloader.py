@@ -36,8 +36,7 @@ class queue:
 
   async def fill(self):
     self.myqueue = await self.db.QueueNotDone()
-    for queue_item in self.myqueue:
-      print(f"Queue ID: {queue_item.id}, URL: {queue_item.url}, Downloaded: {queue_item.downloaded}, Created: {queue_item.create_time}")
+    return self.myqueue
 
 class Downloader:
   Started=False
