@@ -3,10 +3,17 @@
 from sqlalchemy import create_engine, Column, String, Integer, Sequence, ForeignKey, TIMESTAMP, Boolean
 from sqlalchemy.orm import declarative_base, Session
 from sqlalchemy.sql import func
+from munch import munchify
+import yaml
 
 Base = declarative_base()
 
-class downloaded(Base):
+with open("./config.yaml") as f:
+  yamlfile=yaml.safe_load(f)
+config = munchify(yamlfile)
+
+
+class Downloaded(Base):
   __tablename__ = 'downloaded'
   id = Column(Integer, autoincrement=True, primary_key=True)
   title = Column(String)
@@ -15,33 +22,24 @@ class downloaded(Base):
   elapsed = Column(String)
   create_time = Column(TIMESTAMP, default=func.now())
 
-class albums(Base):
+
+class Albums(Base):
   __tablename__ = 'albums'
   id = Column(Integer, autoincrement=True, primary_key=True)
   title = Column(String)
   url = Column(String)
   create_time = Column(TIMESTAMP, default=func.now())
 
-class albums(Base):
-  __tablename__ = 'albums'
+
+class Queue(Base):
+  __tablename__ = 'queue'
   id = Column(Integer, autoincrement=True, primary_key=True)
   url = Column(String)
   downloaded = Column(String)
   create_time = Column(TIMESTAMP, default=func.now())
 
 
-from munch import munchify
-import yaml
-try:
-  with open("./config.yaml") as f:
-      yamlfile=yaml.safe_load(f)
-except yaml.YAMLError:
-  with open('../config.yaml') as f:
-    yamlfile=yaml.safe_load(f)
-
-config = munchify(yamlfile)
-
-class database:
+class Database:
   engine = None
   session = None
 
@@ -59,9 +57,10 @@ class database:
       exit()
   
   def __del__(self):
-      if self.conn is not None:
-          self.conn.close()
-
+    if hasattr(self, 'session') and self.session:
+      self.session.close()
+      del self.session
+    
   def db_create(self):
     try:
       Base.metadata.create_all(self.engine)
@@ -74,12 +73,13 @@ class database:
     self.connect()
 
 
-class sql:  
-  db = database
+class SQL:  
+  db = Database
+  
   def write_to_videoDB(self, title, url, download_path, elapsed):
     self.db.db_create()
     
-    new_downloaded = downloaded(title, url, download_path, elapsed)
+    new_downloaded = Downloaded(title=title, url=url, download_path=download_path, elapsed=elapsed)
     
     self.db.session.add(new_downloaded)
     self.db.session.commit()
@@ -87,7 +87,7 @@ class sql:
   def write_to_albumDB(self, title, url):
     self.db.db_create()
     
-    new_album = albums(title, url)
+    new_album = Albums(title=title, url=url)
     
     self.db.session.add(new_album)
     self.db.session.commit()
@@ -95,7 +95,7 @@ class sql:
   def new_queue(self, downloaded, url):
     self.db.db_create()
     
-    new_album = (url, downloaded)
+    new_album = Queue(url=url, downloaded=downloaded)
     
     self.db.session.add(new_album)
     self.db.session.commit()
