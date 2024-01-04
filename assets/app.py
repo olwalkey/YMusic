@@ -36,11 +36,20 @@ class Download:
           
           return {'message': 'Download request received and queued'}
         except IntegrityError as e:
-          return {'message': f'Duplicate Entry. Link already exists!'}
+          return {
+            'message': f'Duplicate Entry. Link already exists!',
+            'error': e
+            }
         except HTTPException as e:
-          return {'message': f'HTTPException: {e}'}
+          return {
+            'message': f'HTTPException: {e}',
+            'error': e
+            }
         except Exception as e:
-            return {'message': f'Error: {e}'}
+            return {
+            'message': f'An Error Occured',
+            'error': e
+            }
 
 download = Download()
 
