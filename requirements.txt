@@ -8,6 +8,7 @@ click
 colorama
 fastapi
 greenlet
+h11
 idna
 loguru
 markdown-it-py
@@ -28,5 +29,6 @@ starlette
 typer
 typing_extensions
 urllib3
+uvicorn
 websockets
 yt-dlp
