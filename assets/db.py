@@ -36,7 +36,7 @@ def spliturl(url):
   """Splits urls the exact same way as the main.py script for consistant url grabbing
 
   Args:
-      url (string): Youtube url Ie: https://www.youtube.com/watch?v=sVJEaYNOUNw&t=162s
+      url (string): Youtube url Eg: https://www.youtube.com/watch?v=sVJEaYNOUNw&t=162s
 
   Returns:
       string: End of youtube url
