@@ -1,8 +1,10 @@
-from sqlalchemy import create_engine, Column, String, Integer, Sequence, TIMESTAMP, Boolean, select
+from sqlalchemy import create_engine, Column, String, Integer, Sequence, TIMESTAMP, Boolean, Enum, select
 from sqlalchemy.ext.declarative import declarative_base
+from urllib.parse import urlparse, parse_qs
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 from munch import munchify
+
 import yaml
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
@@ -13,27 +15,42 @@ with open("./config.yaml") as f:
 config = munchify(yamlfile)
 
 class Downloaded(Base):
-    __tablename__ = 'downloaded'
-    id = Column(Integer, autoincrement=True, primary_key=True)
-    title = Column(String)
-    url = Column(String)
-    path = Column(String)
-    elapsed = Column(String)
-    create_time = Column(TIMESTAMP, default=func.now())
+  __tablename__ = 'downloaded'
+  id = Column(Integer, autoincrement=True, primary_key=True)
+  title = Column(String)
+  url = Column(String)
+  path = Column(String)
+  elapsed = Column(String)
+  create_time = Column(TIMESTAMP, default=func.now())
 
 class Albums(Base):
-    __tablename__ = 'albums'
-    id = Column(Integer, autoincrement=True, primary_key=True)
-    title = Column(String)
-    url = Column(String)
-    create_time = Column(TIMESTAMP, default=func.now())
+  __tablename__ = 'albums'
+  id = Column(Integer, autoincrement=True, primary_key=True)
+  title = Column(String, default=None)
+  url = Column(String, unique=True)
+  queue_status = Column(Enum('queued', 'in_progress', 'completed', name='queue_status'), default='queued')
+  create_time = Column(TIMESTAMP, default=func.now())
+  downloaded_time = Column(TIMESTAMP, default=None)
 
-class Queue(Base):
-    __tablename__ = 'queue'
-    id = Column(Integer, autoincrement=True, primary_key=True)
-    url = Column(String, unique=True)
-    downloaded = Column(Boolean, default=False)
-    create_time = Column(TIMESTAMP, default=func.now())
+def spliturl(url):
+  """Splits urls the exact same way as the main.py script for consistant url grabbing
+
+  Args:
+      url (string): Youtube url Ie: https://www.youtube.com/watch?v=sVJEaYNOUNw&t=162s
+
+  Returns:
+      string: End of youtube url
+  """
+  parsed_url = urlparse(url)
+
+  query_params = parse_qs(parsed_url.query)
+  video_id = query_params.get('v')
+  playlist_id = query_params.get('list')
+  if not playlist_id == None:
+      url.append(playlist_id)
+  else:
+      url.append(video_id)
+  return url
 
 class Database:
     engine = None
@@ -55,24 +72,23 @@ class Database:
     async def QueueNotDone(self):
         async with self.async_session() as session:
             queued_items = await session.execute(
-                select(Queue).filter(Queue.downloaded.is_(False)).order_by(Queue.create_time.asc())
+                select(Albums).filter(Albums.queue_status == 'queued').order_by(Albums.create_time.asc())
             )
             return queued_items.scalars().all()
     
     async def mark_as_downloaded(self, url):
       async with self.async_session() as session:
-        query = session.query(Queue)
-        query = query.filter(Queue.url == url)
+        query = session.query(Albums)
+        query = query.filter(Albums.url == url)
         await session.execute(
-            query.update({Queue.downloaded: True})
+            query.update({Albums.queue_status: 'completed'})
         )
-    
         await session.commit()
     
-    async def new_queue(self, downloaded, url):
+    async def new_queue(self, url):
         async with self.async_session() as session:
             async with session.begin():
-                new_queue = Queue(url=url, downloaded=downloaded)
+                new_queue = Albums(title=None, url=url, queue_status='queued' )
                 session.add(new_queue)
 
     async def db_create(self):
