@@ -25,16 +25,17 @@ class Download:
         await data.db_create()
         try:
           
-          await self.database.new_queue(downloaded=False, url=url)
+          await self.database.new_queue(url=url)
           
           q = queue()
           self.myqueue = await q.fill()
           queue_list = {}
           for queue_item in self.myqueue:
             queue_list[queue_item.id] = queue_item.url
-          print(queue_list)          
+          print(queue_list)
           
           return {'message': 'Download request received and queued'}
+        
         except IntegrityError as e:
           return {
             'message': f'Duplicate Entry. Link already exists!',
@@ -46,9 +47,10 @@ class Download:
             'error': e
             }
         except Exception as e:
-            return {
-            'message': f'An Error Occured',
-            'error': e
+          print(e)
+          return {
+          'message': f'An Error Occured', 
+          'error': e
             }
 
 download = Download()
