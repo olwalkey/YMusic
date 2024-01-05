@@ -43,7 +43,7 @@ class Download:
             }
         except HTTPException as e:
           return {
-            'message': f'HTTPException: {e}',
+            'message': f'HTTPException',
             'error': e
             }
         except Exception as e:
