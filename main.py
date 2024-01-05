@@ -75,12 +75,14 @@ def audio(
         logger.info(f"current host:{loadedyaml.host} port:{loadedyaml.port}")
         logger.debug(e)
         sys.exit()
+        
     url = spliturl(urls)
     if url == []:
         logger.error('Url Is empty! exiting')
         sys.exit()
     else:
         pass
+    
     logger.trace(f'Full Urls: {urls}')
     for x in url:
         logger.debug(f'http://{Youtube.host}:{Youtube.port}/download/{x[0]}')
