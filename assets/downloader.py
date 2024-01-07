@@ -122,7 +122,7 @@ class Downloader:
       ydl.download(urls)
       print(self.getjson())
       db = Database()
-      # db.finished_download_to_db(self.title, self.url, self.download_path, self.time_elapse)
+      db.mark_video_downloaded(self.title, self.url, self.download_path, self.time_elapse)
       
   def getjson(self):
     data = {
