@@ -115,7 +115,8 @@ async def favicon():
   return FileResponse(favicon_path)
 
 @app.get('/download/{url}')
-async def download_route(url: str, token: Annotated[str, Depends(oauth2_scheme)]):
+#?  add this to download_route function to enable token authentication", token: Annotated[str, Depends(oauth2_scheme)]"
+async def download_route(url: str):
   return await download.download(url)
 
 @app.get('/ping')
@@ -127,6 +128,7 @@ async def get_json():
   data = youtube.getjson()
   data = unmunchify(data)
   return JSONResponse(content=data)
+
 
 @app.get("/users/me")
 async def read_users_me(current_user: Annotated[User, Depends(get_current_active_user)]):
