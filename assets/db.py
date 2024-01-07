@@ -23,8 +23,8 @@ class Downloaded(Base):
   elapsed = Column(String)
   create_time = Column(TIMESTAMP, default=func.now())
 
-class Albums(Base):
-  __tablename__ = 'albums'
+class Playlist(Base):
+  __tablename__ = 'playlists'
   id = Column(Integer, autoincrement=True, primary_key=True)
   title = Column(String, default=None)
   url = Column(String, unique=True)
@@ -72,23 +72,32 @@ class Database:
     async def QueueNotDone(self):
         async with self.async_session() as session:
             queued_items = await session.execute(
-                select(Albums).filter(Albums.queue_status == 'queued').order_by(Albums.create_time.asc())
+                select(Playlist).filter(Playlist.queue_status == 'queued').order_by(Playlist.create_time.asc())
             )
             return queued_items.scalars().all()
     
-    async def mark_as_downloaded(self, url):
+    async def mark_playlist_downloaded(self, url, title, download_path, elapsed):
       async with self.async_session() as session:
-        query = session.query(Albums)
-        query = query.filter(Albums.url == url)
+        query = session.query(Playlist)
+        query = query.filter(Playlist.url == url)
         await session.execute(
-            query.update({Albums.queue_status: 'completed'})
+            query.update({Playlist.queue_status: 'completed'}),
+            query.update({Playlist.title: title}),
+            query.update({Playlist.url: url}),
+            query.update({Playlist.title: title}),
         )
         await session.commit()
+    
+    async def mark_video_downloaded(self, url, title, download_path, elapsed):
+        async with self.async_session() as session:
+            async with session.begin():
+                new_download = Downloaded(title=title, url=url, path=download_path,elapsed=elapsed )
+                session.add(new_download)
     
     async def new_queue(self, url):
         async with self.async_session() as session:
             async with session.begin():
-                new_queue = Albums(title=None, url=url, queue_status='queued' )
+                new_queue = Playlist(title=None, url=url, queue_status='queued' )
                 session.add(new_queue)
 
     async def db_create(self):
