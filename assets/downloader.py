@@ -102,7 +102,6 @@ class Downloader:
       'breakonexisting': True,
       'progress_hooks': [self.progress_hook],
       'postprocessor_hooks': [self.postprocessor_hooks],
-      'format': 'bestaudio/best',
       'writethumbnail': True,
       'outtmpl': 'downloads/%(playlist_title)s/%(title)s.%(ext)s',
       'skip_broken': True,
