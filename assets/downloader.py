@@ -39,6 +39,7 @@ class queue:
     return self.myqueue
 
 class Downloader:
+  StatusStarted=False
   Started=False
   web_use=False
   host=None
@@ -51,7 +52,9 @@ class Downloader:
   eta=None
   url=None
   title=None
-  started=False
+  playlist_url=None
+  urls=[]
+  db = Database()
 
   def __init__(
     self, host:Optional[str]=None, 
@@ -74,14 +77,14 @@ class Downloader:
     
     if d.status == 'finished':
       print(f'Done Downloading "{d["filename"]}"')
-      self.Started = False
+      self.StatusStarted = False
       self.filename = d['filename']
       self.time_elapse = d['elapsed']
     
     if d.status == 'downloading':
-      if not self.started:
+      if not self.StatusStarted:
         print(f'Now Downloading "{d["tmpfilename"]}"')    
-        self.Started = True
+        self.StatusStarted = True
 
       self.filename = d['tmpfilename']
       self.percent = d['_percent_str']
@@ -119,23 +122,26 @@ class Downloader:
       {'already_have_thumbnail': False, 'key': 'EmbedThumbnail'}
     ]}
     return ydl_opts
+  
+  async def queue_dl(self, urls):
+    if not self.Started:
+      self.download(urls)
+    else:
+      for url in urls:
+        self.urls.append(urls[url])
 
-     
+
   def download(self, urls):
-    with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
-      ydl.download(urls)
-      print(self.getjson())
-      db = Database()
-      db.mark_video_downloaded(self.title, self.url, self.download_path, self.time_elapse)
-      
+    for url in self.urls:
+      with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
+        ydl.download(urls[url])
+        self.db.mark_video_downloaded(self.title, self.url, self.download_path, self.time_elapse)
+      self.db.mark_playlist_downloaded(urls[url], self.title)
+      continue
+    self.Started = False
+
   def getjson(self):
     data = {
-      'WebUse': {
-        'use': self.web_use,
-        'host': self.host,
-        'port': self.port
-        },
-      'Started': self.Started,
       'info': {
       'Download_path': self.download_path,
       'filename': self.filename,

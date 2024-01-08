@@ -84,9 +84,9 @@ class Download:
       queue_list = {}
       for queue_item in self.myqueue:
         queue_list[queue_item.id] = queue_item.url
-      print(queue_list)
+      await youtube.queue_dl(queue_list)
+      
       return {'message': 'Download request received and queued'}
-    
     except IntegrityError as e:
       return {
         'message': f'Duplicate Entry. Link already exists!',
