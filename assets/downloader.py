@@ -51,6 +51,7 @@ class Downloader:
   eta=None
   url=None
   title=None
+  started=False
 
   def __init__(
     self, host:Optional[str]=None, 
@@ -63,24 +64,28 @@ class Downloader:
       self.port = port
       self.download_path = download_path
 
-    
-  
+
+
   def progress_hook(self, d):
     d = munchify(d)
+    
     if d.status == 'error':
       pass
+    
     if d.status == 'finished':
       print(f'Done Downloading "{d["filename"]}"')
       self.Started = False
       self.filename = d['filename']
       self.time_elapse = d['elapsed']
+    
     if d.status == 'downloading':
-      
-      print(f'Now Downloading "{d["tmpfilename"]}"')
+      if not self.started:
+        print(f'Now Downloading "{d["tmpfilename"]}"')    
+        self.Started = True
+
       self.filename = d['tmpfilename']
       self.percent = d['_percent_str']
       self.eta = d['_eta_str']
-      self.Started = True
         
   def postprocessor_hooks(self, d):
     d = munchify(d)
