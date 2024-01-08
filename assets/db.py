@@ -30,6 +30,7 @@ class Downloaded(Base):
   __tablename__ = 'downloaded'
   id = Column(Integer, autoincrement=True, primary_key=True)
   title = Column(String)
+  playlist_url = Column(String, ForeignKey('playlists.url')) # New line
   url = Column(String)
   path = Column(String)
   elapsed = Column(String)

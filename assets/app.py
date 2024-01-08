@@ -85,7 +85,6 @@ class Download:
       for queue_item in self.myqueue:
         queue_list[queue_item.id] = queue_item.url
       print(queue_list)
-      
       return {'message': 'Download request received and queued'}
     
     except IntegrityError as e:
