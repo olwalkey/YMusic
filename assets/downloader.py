@@ -1,7 +1,24 @@
 import yt_dlp
 from munch import munchify
 from typing import Optional
+from loguru import logger
+import sys
 
+debug = True
+trace = True
+
+def debug_init(trace, debug):
+    logger.remove()
+    if debug:
+        logger.add(sys.stderr, level='DEBUG')
+    elif trace:
+        logger.add(sys.stderr, level='TRACE')
+    else:
+        logger.add(sys.stderr, level='INFO')
+        pass
+    pass
+
+debug_init(trace, debug)
 
 if __name__ == 'downloader':
   from db import Database
@@ -53,7 +70,7 @@ class Downloader:
   url=None
   title=None
   playlist_url=None
-  urls=[]
+  urls={}
   db = Database()
 
   def __init__(
@@ -123,21 +140,29 @@ class Downloader:
     ]}
     return ydl_opts
   
-  async def queue_dl(self, urls):
+  async def queue_dl(self, urls: dict):
+    logger.trace(f'Started: {self.Started}')
+    logger.debug(urls)
+    
     if not self.Started:
-      self.download(urls)
+      logger.trace('Starting Download')
+      await self.download(urls)
     else:
-      for url in urls:
-        self.urls.append(urls[url])
+      logger.trace('Print_appending stuff')
+      for value, url in urls.items():
+        self.url[value].append(url) 
 
 
-  def download(self, urls):
-    for url in self.urls:
+  async def download(self, urls):
+    logger.debug(urls)
+    logger.trace('Start Download Function')
+    for url, value in self.urls.items():
+      logger.trace('Start for loop')
       with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
-        ydl.download(urls[url])
+        logger.trace('Start with statement')
+        ydl.download(value)
         self.db.mark_video_downloaded(self.title, self.url, self.download_path, self.time_elapse)
-      self.db.mark_playlist_downloaded(urls[url], self.title)
-      continue
+      self.db.mark_playlist_downloaded(value, self.title)
     self.Started = False
 
   def getjson(self):

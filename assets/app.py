@@ -8,6 +8,21 @@ from downloader import Downloader, queue
 from sqlalchemy.exc import IntegrityError
 from pydantic import BaseModel
 import db
+from loguru import logger
+import sys
+
+def debug_init(trace, debug):
+    logger.remove()
+    if debug:
+        logger.add(sys.stderr, level='DEBUG')
+    elif trace:
+        logger.add(sys.stderr, level='TRACE')
+    else:
+        logger.add(sys.stderr, level='INFO')
+        pass
+    pass
+
+debug_init(True, True)
 
 fake_users_db = {
     "johndoe": {
@@ -73,17 +88,26 @@ class Download:
     self.database = db.Database()
 
   async def download(self, url):
+    logger.trace('Download route got')
     data = db.Database()
+    logger.trace('create db.Database instance')
     await data.db_create()
+    logger.trace('Create tables')
     try:
       
+      logger.trace('new queue')
       await self.database.new_queue(url=url)
       
+      logger.trace('init queue instance')
       q = queue()
+      logger.trace('queue.fill')
       self.myqueue = await q.fill()
       queue_list = {}
+      logger.trace('fill queue_list dict')
       for queue_item in self.myqueue:
         queue_list[queue_item.id] = queue_item.url
+      logger.debug(queue_list)
+      logger.trace('youtube.queue_dl')
       await youtube.queue_dl(queue_list)
       
       return {'message': 'Download request received and queued'}
