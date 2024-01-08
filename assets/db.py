@@ -1,10 +1,10 @@
-from sqlalchemy import create_engine, Column, String, Integer, Sequence, TIMESTAMP, Boolean, Enum, select
+from sqlalchemy import create_engine, Column, String, Integer, Sequence, TIMESTAMP, Boolean, Enum, select, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from urllib.parse import urlparse, parse_qs
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.future import select
 from sqlalchemy.sql import func
 from munch import munchify
-
 import yaml
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
@@ -14,14 +14,7 @@ with open("./config.yaml") as f:
     yamlfile = yaml.safe_load(f)
 config = munchify(yamlfile)
 
-class Downloaded(Base):
-  __tablename__ = 'downloaded'
-  id = Column(Integer, autoincrement=True, primary_key=True)
-  title = Column(String)
-  url = Column(String)
-  path = Column(String)
-  elapsed = Column(String)
-  create_time = Column(TIMESTAMP, default=func.now())
+
 
 class Playlist(Base):
   __tablename__ = 'playlists'
@@ -31,6 +24,21 @@ class Playlist(Base):
   queue_status = Column(Enum('queued', 'in_progress', 'completed', name='queue_status'), default='queued')
   create_time = Column(TIMESTAMP, default=func.now())
   downloaded_time = Column(TIMESTAMP, default=None)
+  downloaded_items = relationship('Downloaded', back_populates='playlist')
+
+class Downloaded(Base):
+  __tablename__ = 'downloaded'
+  id = Column(Integer, autoincrement=True, primary_key=True)
+  title = Column(String)
+  url = Column(String)
+  path = Column(String)
+  elapsed = Column(String)
+  create_time = Column(TIMESTAMP, default=func.now())
+  playlist = relationship('Playlist', back_populates='downloaded_items')
+
+
+
+
 
 def spliturl(url):
   """Splits urls the exact same way as the main.py script for consistant url grabbing
@@ -52,6 +60,8 @@ def spliturl(url):
       url.append(video_id)
   return url
 
+
+
 class Database:
     engine = None
     async_session = None
@@ -66,52 +76,54 @@ class Database:
         )
 
         self.async_session = sessionmaker(
-            bind=self.engine, expire_on_commit=False, class_=AsyncSession
+          bind=self.engine, expire_on_commit=False, class_=AsyncSession
         )
 
     async def QueueNotDone(self):
         async with self.async_session() as session:
-            queued_items = await session.execute(
-                select(Playlist).filter(Playlist.queue_status == 'queued').order_by(Playlist.create_time.asc())
-            )
-            return queued_items.scalars().all()
+          queued_items = await session.execute(
+            select(Playlist).filter(Playlist.queue_status == 'queued').order_by(Playlist.create_time.asc())
+          )
+          return queued_items.scalars().all()
     
-    async def mark_playlist_downloaded(self, url, title, download_path, elapsed):
+    async def mark_playlist_downloaded(self, url, title):
       async with self.async_session() as session:
         query = session.query(Playlist)
         query = query.filter(Playlist.url == url)
         await session.execute(
-            query.update({Playlist.queue_status: 'completed'}),
-            query.update({Playlist.title: title}),
-            query.update({Playlist.url: url}),
-            query.update({Playlist.title: title}),
+          query.update({Playlist.queue_status: 'completed'}),
+          query.update({Playlist.title: title}),
+          query.update({Playlist.url: url}),
+          query.update({Playlist.title: title}),
         )
         await session.commit()
-    
+
     async def mark_video_downloaded(self, url, title, download_path, elapsed):
-        async with self.async_session() as session:
-            async with session.begin():
-                new_download = Downloaded(title=title, url=url, path=download_path,elapsed=elapsed )
-                session.add(new_download)
+      async with self.async_session() as session:
+        async with session.begin():
+          new_download = Downloaded(title=title, url=url, path=download_path,elapsed=elapsed )
+          session.add(new_download)
     
     async def new_queue(self, url):
-        async with self.async_session() as session:
-            async with session.begin():
-                new_queue = Playlist(title=None, url=url, queue_status='queued' )
-                session.add(new_queue)
+      async with self.async_session() as session:
+        async with session.begin():
+          new_queue = Playlist(title=None, url=url, queue_status='queued')
+          session.add(new_queue)
 
     async def db_create(self):
-        async with self.engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+      async with self.engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+                
+                
                 
     async def reconnect(self):
-        await self.async_session.close()
-        self.connect()
+      await self.async_session.close()
+      self.connect()
 
     async def __aenter__(self):
-        return self
+      return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        await self.async_session.close()
-        if exc_type is not None:
-            raise
+      await self.async_session.close()
+      if exc_type is not None:
+        raise
