@@ -94,8 +94,7 @@ class Database:
         await session.execute(
           query.update({Playlist.queue_status: 'completed'}),
           query.update({Playlist.title: title}),
-          query.update({Playlist.url: url}),
-          query.update({Playlist.title: title}),
+          query.update({Playlist.downloaded_time: func.now()})
         )
         await session.commit()
 
