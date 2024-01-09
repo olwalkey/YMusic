@@ -2,9 +2,9 @@ import yt_dlp
 from munch import munchify
 from typing import Optional
 from loguru import logger
-import asyncio
-import concurrent.futures
+import threading
 import sys
+import asyncio
 
 def debug_init(trace, debug):
     logger.remove()
@@ -48,9 +48,16 @@ class MyLogger:
 class queue:
 
   started=False
-  db = Database()
-
+  if __name__ != "__main__":
+    db = Database()
+  else:
+    pass
   async def fill(self):
+    """returns all non downloaded items in the database
+
+    Returns:
+        dict: id: url
+    """
     self.myqueue = await self.db.QueueNotDone()
     return self.myqueue
 
@@ -70,7 +77,10 @@ class Downloader:
   title=None
   playlist_url=None
   urls={}
-  db = Database()
+  if __name__ != "__main__":
+    db = Database()
+  else: 
+    pass
 
   def __init__(
     self, host:Optional[str]=None, 
@@ -146,7 +156,6 @@ class Downloader:
     if not self.Started:
       logger.trace('Starting Download')
       await self.download(urls)
-      self.Started = True
     else:
       logger.trace('Print_appending stuff')
       for value, url in urls.items():
@@ -154,28 +163,17 @@ class Downloader:
 
 
   async def download(self, urls):
-    logger.debug(urls)
+    logger.debug(f'urls: {urls}')
+    logger.debug(f'self.urls: {self.urls}')
     logger.trace('Start Download Function')
-
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-      loop = asyncio.get_event_loop()
-      tasks = []
-
-    logger.trace('Start for loop')
     for url, value in self.urls.items():
-      tasks.append(loop.run_in_executor(executor, self._download_sync, value))
-
-    await asyncio.gather(*tasks)
-
-
-  def _download_sync(self, value):
+      logger.trace('Start for loop')
       with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
-          logger.trace('Start with statement')
-          ydl.download(value)
-          self.db.mark_video_downloaded(self.title, self.url, self.download_path, self.time_elapse)
-
-      self.db.mark_playlist_downloaded(value, self.title)
-
+        logger.trace('Start with statement')
+        await ydl.download(value)
+        await self.db.mark_video_downloaded(self.title, self.url, self.download_path, self.time_elapse)
+      await self.db.mark_playlist_downloaded(value, self.title)
+    self.Started = False
 
   def getjson(self):
     data = {
