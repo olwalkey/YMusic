@@ -61,6 +61,8 @@ class queue:
     self.myqueue = await self.db.QueueNotDone()
     return self.myqueue
 
+
+
 class Downloader:
   StatusStarted=False
   Started=False
@@ -76,7 +78,7 @@ class Downloader:
   url=None
   title=None
   playlist_url=None
-  urls={}
+  urls=[]
   if __name__ != "__main__":
     db = Database()
   else: 
@@ -149,30 +151,29 @@ class Downloader:
     ]}
     return ydl_opts
   
-  async def queue_dl(self, urls: dict):
+  async def queue_dl(self, qurls: list):
     logger.trace(f'Started: {self.Started}')
-    logger.debug(urls)
+    logger.debug(qurls)
     
     if not self.Started:
       logger.trace('Starting Download')
-      await self.download(urls)
+      self.urls = qurls
+      await self.download()
     else:
       logger.trace('Print_appending stuff')
-      for value, url in urls.items():
-        self.urls[value].append(url)
+      for url in qurls:
+        self.urls.append(url)
 
-
-  async def download(self, urls):
-    logger.debug(f'urls: {urls}')
+  async def download(self):
     logger.debug(f'self.urls: {self.urls}')
     logger.trace('Start Download Function')
-    for url, value in self.urls.items():
+    for url in self.urls:
       logger.trace('Start for loop')
       with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
         logger.trace('Start with statement')
-        await ydl.download(value)
+        await ydl.download(url)
         await self.db.mark_video_downloaded(self.title, self.url, self.download_path, self.time_elapse)
-      await self.db.mark_playlist_downloaded(value, self.title)
+      await self.db.mark_playlist_downloaded(url, self.title)
     self.Started = False
 
   def getjson(self):

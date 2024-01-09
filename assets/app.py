@@ -102,15 +102,16 @@ class Download:
       q = queue()
       logger.trace('queue.fill')
       self.myqueue = await q.fill()
-      queue_list = {}
+      queue_list = []
       logger.trace('fill queue_list dict')
       for queue_item in self.myqueue:
-        queue_list[queue_item.id] = queue_item.url
+        queue_list.append(queue_item.url)
       logger.debug(queue_list)
       logger.trace('youtube.queue_dl')
       await youtube.queue_dl(queue_list)
       
-      return {'message': 'Download request received and queued'}
+      return {'message': 'Download request received and queued',
+              'error': None}
     except IntegrityError as e:
       return {
         'message': f'Duplicate Entry. Link already exists!',
