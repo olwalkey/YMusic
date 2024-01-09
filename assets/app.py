@@ -22,7 +22,7 @@ def debug_init(trace, debug):
         pass
     pass
 
-debug_init(True, True)
+debug_init(True, False)
 
 fake_users_db = {
     "johndoe": {

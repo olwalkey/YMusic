@@ -53,7 +53,6 @@ with open('config.yaml') as stream:
 loadedyaml = munchify(yamlfile)
 
 
-# Youtube = Downloader(host=f'{loadedyaml.host}', port=loadedyaml.port)
 
 @app.command()
 def audio(

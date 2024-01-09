@@ -2,10 +2,9 @@ import yt_dlp
 from munch import munchify
 from typing import Optional
 from loguru import logger
+import asyncio
+import concurrent.futures
 import sys
-
-debug = True
-trace = True
 
 def debug_init(trace, debug):
     logger.remove()
@@ -18,9 +17,9 @@ def debug_init(trace, debug):
         pass
     pass
 
-debug_init(trace, debug)
+debug_init(True, False)
 
-if __name__ == 'downloader':
+if __name__ != '__main__':
   from db import Database
 else:
   pass
@@ -147,23 +146,36 @@ class Downloader:
     if not self.Started:
       logger.trace('Starting Download')
       await self.download(urls)
+      self.Started = True
     else:
       logger.trace('Print_appending stuff')
       for value, url in urls.items():
-        self.url[value].append(url) 
+        self.urls[value].append(url)
 
 
   async def download(self, urls):
     logger.debug(urls)
     logger.trace('Start Download Function')
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+      loop = asyncio.get_event_loop()
+      tasks = []
+
+    logger.trace('Start for loop')
     for url, value in self.urls.items():
-      logger.trace('Start for loop')
+      tasks.append(loop.run_in_executor(executor, self._download_sync, value))
+
+    await asyncio.gather(*tasks)
+
+
+  def _download_sync(self, value):
       with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
-        logger.trace('Start with statement')
-        ydl.download(value)
-        self.db.mark_video_downloaded(self.title, self.url, self.download_path, self.time_elapse)
+          logger.trace('Start with statement')
+          ydl.download(value)
+          self.db.mark_video_downloaded(self.title, self.url, self.download_path, self.time_elapse)
+
       self.db.mark_playlist_downloaded(value, self.title)
-    self.Started = False
+
 
   def getjson(self):
     data = {
