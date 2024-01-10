@@ -1,7 +1,6 @@
 from typer import Typer, Option, Argument
 from requests.exceptions import RequestException
 from urllib.parse import urlparse, parse_qs
-from assets.downloader import Downloader
 from typing import Optional
 from munch import munchify
 from loguru import logger
@@ -63,8 +62,7 @@ def audio(
     debug_init(trace, debug)
 
     try:
-        Youtube = Downloader(host=f'{loadedyaml.host}', port=loadedyaml.port)
-        r = requests.get(f'http://{Youtube.host}:{Youtube.port}/ping')
+        r = requests.get(f'http://{loadedyaml.host}:{loadedyaml.port}/ping')
         r = munchify(r.json())
         logger.info(f'Pinging server: {r.ping}')
         logger.debug(r)
@@ -84,13 +82,10 @@ def audio(
     
     logger.trace(f'Full Urls: {urls}')
     for x in url:
-        logger.debug(f'http://{Youtube.host}:{Youtube.port}/download/{x[0]}')
-        response = requests.get(f'http://{Youtube.host}:{Youtube.port}/download/{x[0]}')
+        logger.debug(f'http://{loadedyaml.host}:{loadedyaml.port}/download/{x[0]}')
+        response = requests.get(f'http://{loadedyaml.host}:{loadedyaml.port}/download/{x[0]}')
         if response.status_code == 200:
             logger.info(response.json())
-            json_response = munchify(Youtube.getjson())
-            logger.trace(json_response.info)
-
         else:
             print(f'Failure: {response.status_code}')
         pass
