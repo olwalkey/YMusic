@@ -22,7 +22,7 @@ def debug_init(trace, debug):
         pass
     pass
 
-debug_init(True, False)
+debug_init(False, False)
 
 fake_users_db = {
     "johndoe": {
@@ -132,11 +132,6 @@ class Download:
 
 
 download = Download()
-favicon_path = 'assets/favicon.ico'
-
-@app.get('/favicon.ico', include_in_schema=False)
-async def favicon():
-  return FileResponse(favicon_path)
 
 @app.get('/download/{url}')
 #?  add this to download_route function to enable token authentication", token: Annotated[str, Depends(oauth2_scheme)]"

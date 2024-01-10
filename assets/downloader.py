@@ -19,10 +19,16 @@ def debug_init(trace, debug):
         pass
     pass
 
-debug_init(True, False)
+debug_init(False, False)
 
 if __name__ != '__main__':
-  from db import Database
+  try:
+    from db import Database
+  except ImportError:
+    try: 
+      from .db import Database
+    except:
+      exit()
 else:
   pass
 
