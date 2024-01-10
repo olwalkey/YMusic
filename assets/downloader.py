@@ -182,21 +182,21 @@ class Downloader:
     logger.trace('Start Download Function')
 
     loop = asyncio.get_event_loop()
-
-    self.executor.submit(self.download_thread, self.urls)
-
-    self.executor.shutdown(wait=False)
+    for url in self.urls:
+      self.executor.submit(self.download_thread, url)
 
     self.Started = False
 
   def download_thread(self, url):
+    title = None
+    download_path = None
+    time_elapse = None
     logger.trace('Start for loop')
-    for url in self.urls:
-      with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
-        logger.trace('Start with statement')
-        ydl.download(url)
-        self.db.mark_video_downloaded(self.title, self.url, self.download_path, self.time_elapse)
-      self.db.mark_playlist_downloaded(url, self.title)
+    with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
+      logger.trace('Start with statement')
+      ydl.download(url)
+      self.db.mark_video_downloaded(self.title, self.url, self.download_path, self.time_elapse)
+    self.db.mark_playlist_downloaded(url, self.title)
     
 
   def getjson(self):
