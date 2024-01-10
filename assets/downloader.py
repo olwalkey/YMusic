@@ -3,10 +3,8 @@ from munch import munchify
 from typing import Optional
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor
-import threading
 import asyncio
 import sys
-
 
 def debug_init(trace, debug):
     logger.remove()
@@ -108,8 +106,6 @@ class Downloader:
       self.port = port
       self.download_path = download_path
 
-
-
   def progress_hook(self, d):
     d = munchify(d)
     
@@ -195,7 +191,9 @@ class Downloader:
     with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
       logger.trace('Start with statement')
       ydl.download(url)
-      self.db.mark_video_downloaded(self.title, self.url, self.download_path, self.time_elapse)
+      self.db.mark_video_downloaded(self.url, self.title, self.download_path, self.time_elapse)
+    print(url)
+    print(self.title)
     self.db.mark_playlist_downloaded(url, self.title)
     
 
