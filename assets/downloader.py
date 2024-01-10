@@ -2,9 +2,11 @@ import yt_dlp
 from munch import munchify
 from typing import Optional
 from loguru import logger
+from concurrent.futures import ThreadPoolExecutor
 import threading
-import sys
 import asyncio
+import sys
+
 
 def debug_init(trace, debug):
     logger.remove()
@@ -58,7 +60,7 @@ class queue:
     Returns:
         dict: id: url
     """
-    self.myqueue = await self.db.QueueNotDone()
+    self.myqueue = self.db.QueueNotDone()
     return self.myqueue
 
 
@@ -83,6 +85,11 @@ class Downloader:
     db = Database()
   else: 
     pass
+  
+  loop = asyncio.get_event_loop()
+  executor = ThreadPoolExecutor(max_workers=1)
+  loop.set_default_executor(executor)
+
 
   def __init__(
     self, host:Optional[str]=None, 
@@ -133,7 +140,7 @@ class Downloader:
 
   def ydl_opts(self):
     ydl_opts = {
-      'ratelimit': 500000, # Kilobytes
+      # 'ratelimit': 500000, # Kilobytes
       'logger': MyLogger(),
       'breakonexisting': True,
       'progress_hooks': [self.progress_hook],
@@ -167,14 +174,24 @@ class Downloader:
   async def download(self):
     logger.debug(f'self.urls: {self.urls}')
     logger.trace('Start Download Function')
+
+    loop = asyncio.get_event_loop()
+
+    self.executor.submit(self.download_thread, self.urls)
+
+    self.executor.shutdown(wait=False)
+
+    self.Started = False
+
+  def download_thread(self, url):
+    logger.trace('Start for loop')
     for url in self.urls:
-      logger.trace('Start for loop')
       with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
         logger.trace('Start with statement')
-        await ydl.download(url)
-        await self.db.mark_video_downloaded(self.title, self.url, self.download_path, self.time_elapse)
-      await self.db.mark_playlist_downloaded(url, self.title)
-    self.Started = False
+        ydl.download(url)
+        self.db.mark_video_downloaded(self.title, self.url, self.download_path, self.time_elapse)
+      self.db.mark_playlist_downloaded(url, self.title)
+    
 
   def getjson(self):
     data = {

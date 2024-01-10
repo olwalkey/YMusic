@@ -91,12 +91,12 @@ class Download:
     logger.trace('Download route got')
     data = db.Database()
     logger.trace('create db.Database instance')
-    await data.db_create()
+    data.db_create()
     logger.trace('Create tables')
     try:
       
       logger.trace('new queue')
-      await self.database.new_queue(url=url)
+      self.database.new_queue(url=url)
       
       logger.trace('init queue instance')
       q = queue()
