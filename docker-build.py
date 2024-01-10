@@ -1,10 +1,10 @@
 #!/bin/python3.12
 import subprocess
 
-run_docker = True
+run_docker = False
 
 with open('version') as f:
-  version = f.readline()
+  version = f.readline().strip()
 # Build Docker image
 subprocess.run(["docker", "build", "-t", "youtube-downloader", "."])
 
