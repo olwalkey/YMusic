@@ -90,32 +90,34 @@ class Database:
             session.commit()
 
     def mark_video_downloaded(self, url, title, download_path, elapsed):
-        with self.session() as session:
-            with session.begin():
-                new_download = Downloaded(title=title, url=url, path=download_path, elapsed=elapsed)
-                session.add(new_download)
+      with self.session() as session:
+        with session.begin():
+          new_download = Downloaded(title=title, url=url, path=download_path, elapsed=elapsed)
+          session.add(new_download)
+          session.commit()
 
     def new_queue(self, url):
-        with self.session() as session:
-            with session.begin():
-                new_queue = Playlist(title=None, url=url, queue_status='queued')
-                session.add(new_queue)
+      with self.session() as session:
+        with session.begin():
+          new_queue = Playlist(title=None, url=url, queue_status='queued')
+          session.add(new_queue)
+          session.commit()
 
     def db_create(self):
-        with self.engine.begin() as conn:
-            Base.metadata.create_all(conn)
+      with self.engine.begin() as conn:
+        Base.metadata.create_all(conn)
 
     def reconnect(self):
-        self.session.close_all()
-        self.connect()
+      self.session.close_all()
+      self.connect()
 
     def __enter__(self):
-        return self
+      return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.session.close_all()
-        if exc_type is not None:
-            raise
+      self.session.close_all()
+      if exc_type is not None:
+        raise
 
 
 
