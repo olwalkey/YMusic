@@ -80,14 +80,16 @@ class Database:
 
     def mark_playlist_downloaded(self, url, title):
         with self.session() as session:
-            query = session.query(Playlist)
-            query = query.filter(Playlist.url == url)
-            session.execute(
-                query.update({Playlist.queue_status: 'completed'}),
-                query.update({Playlist.title: title}),
-                query.update({Playlist.downloaded_time: func.now()})
-            )
-            session.commit()
+          query = session.query(Playlist)
+          query = query.filter(Playlist.url == url)
+          
+        update_data = {
+            Playlist.queue_status: 'completed',
+            Playlist.title: title,
+            Playlist.downloaded_time: func.now()}
+        session.execute(query.update(update_data))
+
+        session.commit()
 
     def mark_video_downloaded(self, url, title, download_path, elapsed):
       with self.session() as session:
