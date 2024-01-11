@@ -85,6 +85,8 @@ class Downloader:
   url=None
   title=None
   playlist_url=None
+  PostProcessorStarted=None
+
   urls=[]
   if __name__ != "__main__":
     db = Database()
@@ -118,7 +120,7 @@ class Downloader:
       self.StatusStarted = False
       self.filename = d['filename']
       self.time_elapse = d['elapsed']
-    
+      self.PostProcessorStarted=False
     if d.status == 'downloading':
       if not self.StatusStarted:
         logger.trace(f'Now Downloading "{d["tmpfilename"]}"')    
@@ -139,7 +141,9 @@ class Downloader:
       pass
     if d.status == 'finished':
       logger.trace('PostProcessor Hook finished')
-      self.db.mark_video_downloaded(self.url, self.title, self.download_path, self.time_elapse)
+      if not self.PostProcessorStarted:
+        self.db.mark_video_downloaded(self.url, self.title, self.download_path, self.time_elapse)
+        self.PostProcessorStarted =True
       self.Status = 'Finished'
       pass
 
