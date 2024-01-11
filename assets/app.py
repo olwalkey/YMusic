@@ -10,6 +10,7 @@ from pydantic import BaseModel
 import db
 from loguru import logger
 import sys
+import asyncio
 
 def debug_init(trace, debug):
     logger.remove()
@@ -101,7 +102,7 @@ class Download:
       logger.trace('init queue instance')
       q = queue()
       logger.trace('queue.fill')
-      self.myqueue = await q.fill()
+      self.myqueue = q.fill()
       queue_list = []
       logger.trace('fill queue_list dict')
       for queue_item in self.myqueue:
@@ -176,4 +177,7 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
 
 if __name__ == '__main__':
   import uvicorn
+  data = db.Database()
+  data.db_create()
+  asyncio.run(youtube.queue_dl())
   uvicorn.run(app, host='0.0.0.0', port=config.port)

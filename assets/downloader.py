@@ -17,7 +17,7 @@ def debug_init(trace, debug):
         pass
     pass
 
-debug_init(False, False)
+debug_init(True, False)
 
 if __name__ != '__main__':
   try:
@@ -52,13 +52,12 @@ class MyLogger:
 
 
 class queue:
-
   started=False
   if __name__ != "__main__":
     db = Database()
   else:
     pass
-  async def fill(self):
+  def fill(self):
     """returns all non downloaded items in the database
 
     Returns:
@@ -70,6 +69,8 @@ class queue:
 
 
 class Downloader:
+  debug_init(True, False)
+  
   StatusStarted=False
   Started=False
   web_use=False
@@ -113,14 +114,14 @@ class Downloader:
       pass
     
     if d.status == 'finished':
-      print(f'Done Downloading "{d["filename"]}"')
+      logger.trace(f'Done Downloading "{d["filename"]}"')
       self.StatusStarted = False
       self.filename = d['filename']
       self.time_elapse = d['elapsed']
     
     if d.status == 'downloading':
       if not self.StatusStarted:
-        print(f'Now Downloading "{d["tmpfilename"]}"')    
+        logger.trace(f'Now Downloading "{d["tmpfilename"]}"')    
         self.StatusStarted = True
 
       self.filename = d['tmpfilename']
@@ -137,6 +138,8 @@ class Downloader:
       self.Status = 'Started'
       pass
     if d.status == 'finished':
+      logger.trace('PostProcessor Hook finished')
+      self.db.mark_video_downloaded(self.url, self.title, self.download_path, self.time_elapse)
       self.Status = 'Finished'
       pass
 
@@ -160,11 +163,14 @@ class Downloader:
     ]}
     return ydl_opts
   
-  async def queue_dl(self, qurls: list):
+  async def queue_dl(self, qurls: Optional[list] = None):
     logger.trace(f'Started: {self.Started}')
     logger.debug(qurls)
     
-    if not self.Started:
+    if qurls == None:
+      q = queue()
+      q.fill()
+    elif not self.Started:
       logger.trace('Starting Download')
       self.urls = qurls
       await self.download()
@@ -177,7 +183,6 @@ class Downloader:
     logger.debug(f'self.urls: {self.urls}')
     logger.trace('Start Download Function')
 
-    loop = asyncio.get_event_loop()
     for url in self.urls:
       self.executor.submit(self.download_thread, url)
 
@@ -191,7 +196,6 @@ class Downloader:
     with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
       logger.trace('Start with statement')
       ydl.download(url)
-      self.db.mark_video_downloaded(self.url, self.title, self.download_path, self.time_elapse)
     print(url)
     print(self.title)
     self.db.mark_playlist_downloaded(url, self.title)
