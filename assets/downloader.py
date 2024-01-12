@@ -3,6 +3,7 @@ from munch import munchify
 from typing import Optional
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor
+from pytube import Playlist
 import asyncio
 import sys
 
@@ -193,32 +194,28 @@ class Downloader:
   async def download(self):
     logger.debug(f'self.urls: {self.urls}')
     logger.trace('Start Download Function')
-
     for url in self.urls:
       self.executor.submit(self.download_thread, url)
       self.urls.remove(url)
-
     self.Started = False
 
   def download_thread(self, url):
-    title = None
-    download_path = None
-    time_elapse = None
     logger.trace('Start for loop')
     self.playlist_url=url
     with yt_dlp.YoutubeDL(self.playlist_title()) as ydl:
       result = ydl.extract_info(url, download=False)
-      if 'title' in result:
-        self.PlaylistTitle = result['title']
-      else:
-        pass
+      title_url = result['url']
+      playlist = Playlist(title_url)
+      self.PlaylistTitle = playlist.title
+
+
     with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
       logger.trace('Start with statement')
       ydl.download(url)
     logger.debug('At the end')
     self.db.mark_playlist_downloaded(url, self.PlaylistTitle)
     logger.debug("It's over")
-    
+
 
   def getjson(self):
     data = {

@@ -64,7 +64,7 @@ class Database:
     def connect(self, host: config.db.host, port: config.db.port, user: config.db.user, password: config.db.password, database: config.db.db):
         self.engine = create_engine(
             f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}",
-            echo=False  # Set to False in production
+            echo=False # Set to False in production
         )
 
         self.session = sessionmaker(
@@ -79,13 +79,22 @@ class Database:
             return queued_items.scalars().all()
 
     def mark_playlist_downloaded(self, qurl, title):
-      logger.debug(qurl)
-      stmt = (
-          update(Playlist)
-          .where(Playlist.url == qurl)
-          .values(title=title)
-      )
-
+      try:
+        logger.debug(qurl)
+        stmt = (
+            update(Playlist)
+            .where(Playlist.url == qurl)
+            .values(
+              title=title, 
+              queue_status='completed',
+              downloaded_time=func.now()
+            )
+        )
+        with self.session() as session:
+          with session.begin():
+            session.execute(stmt)
+      except Exception as e:
+        logger.error(e)
         
     def mark_video_downloaded(self, playlist_url, url, title, download_path, elapsed):
       with self.session() as session:
