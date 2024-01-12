@@ -1,11 +1,9 @@
-from sqlalchemy import create_engine, Column, String, Integer, Sequence, TIMESTAMP, Boolean, Enum, select, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine, Column, String, Integer, Sequence, TIMESTAMP, Boolean, Enum, select, ForeignKey, update
 from urllib.parse import urlparse, parse_qs
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
 from sqlalchemy.sql import func
 from munch import munchify
 import yaml
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 Base = declarative_base()
 
@@ -27,7 +25,7 @@ class Downloaded(Base):
   __tablename__ = 'downloaded'
   id = Column(Integer, autoincrement=True, primary_key=True)
   title = Column(String)
-  playlist_url = Column(String, ForeignKey('playlists.url')) # New line
+  playlist_url = Column(String, ForeignKey('playlists.url'))
   url = Column(String)
   path = Column(String)
   elapsed = Column(String)
@@ -79,24 +77,29 @@ class Database:
             return queued_items.scalars().all()
 
     def mark_playlist_downloaded(self, url, title):
+      try:
         with self.session() as session:
-          query = session.query(Playlist)
-          query = query.filter(Playlist.url == url)
-          
-        update_data = {
-            Playlist.queue_status: 'completed',
-            Playlist.title: title,
-            Playlist.downloaded_time: func.now()}
-        session.execute(query.update(update_data))
-
-        session.commit()
-
-    def mark_video_downloaded(self, url, title, download_path, elapsed):
+          stmt = (
+            update(Playlist).
+            where(Playlist.url==url).
+            values(title=title, downloaded_time=func.now)
+            )
+          session.execute(stmt)
+          session.commit()
+      except Exception as e:
+        print(e)
+    def mark_video_downloaded(self, playlist_url, url, title, download_path, elapsed):
       with self.session() as session:
         with session.begin():
-          new_download = Downloaded(title=title, url=url, path=download_path, elapsed=elapsed)
+          new_download = Downloaded(
+            title=title, 
+            playlist_url=playlist_url,
+            url=url, 
+            path=download_path, 
+            elapsed=elapsed,
+            )
           session.add(new_download)
-          session.commit()
+          session.commit()  
 
     def new_queue(self, url):
       with self.session() as session:

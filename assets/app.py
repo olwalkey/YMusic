@@ -50,7 +50,7 @@ with open('./config.yaml') as stream:
     print(exc)
 config = munchify(yamlfile)
 
-app = FastAPI(debug=True)
+app = FastAPI(debug=False)
 youtube = Downloader()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 

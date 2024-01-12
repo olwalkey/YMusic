@@ -17,7 +17,7 @@ def debug_init(trace, debug):
         pass
     pass
 
-debug_init(True, False)
+debug_init(False, False)
 
 if __name__ != '__main__':
   try:
@@ -142,7 +142,7 @@ class Downloader:
     if d.status == 'finished':
       logger.trace('PostProcessor Hook finished')
       if not self.PostProcessorStarted:
-        self.db.mark_video_downloaded(self.url, self.title, self.download_path, self.time_elapse)
+        self.db.mark_video_downloaded(playlist_url=self.playlist_url, url=self.url, title=self.title, download_path=self.download_path, elapsed=self.time_elapse)
         self.PostProcessorStarted =True
       self.Status = 'Finished'
       pass
@@ -165,6 +165,13 @@ class Downloader:
       {'add_metadata': 'True', 'key': 'FFmpegMetadata'},
       {'already_have_thumbnail': False, 'key': 'EmbedThumbnail'}
     ]}
+    return ydl_opts
+
+  def playlist_title(self):
+    ydl_opts = {
+      'quiet': True,
+      'extract_flat': True
+    }
     return ydl_opts
   
   async def queue_dl(self, qurls: Optional[list] = None):
@@ -197,12 +204,19 @@ class Downloader:
     download_path = None
     time_elapse = None
     logger.trace('Start for loop')
+    self.playlist_url=url
+    with yt_dlp.YoutubeDL(self.playlist_title()) as ydl:
+      result = ydl.extract_info(url, download=False)
+      if 'title' in result:
+        self.PlaylistTitle = result['title']
+      else:
+        pass
     with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
       logger.trace('Start with statement')
       ydl.download(url)
-    print(url)
-    print(self.title)
-    self.db.mark_playlist_downloaded(url, self.title)
+    logger.debug('At the end')
+    self.db.mark_playlist_downloaded(url, self.PlaylistTitle)
+    logger.debug("It's over")
     
 
   def getjson(self):
