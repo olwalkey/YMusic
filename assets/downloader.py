@@ -196,6 +196,7 @@ class Downloader:
 
     for url in self.urls:
       self.executor.submit(self.download_thread, url)
+      self.urls.remove(url)
 
     self.Started = False
 
