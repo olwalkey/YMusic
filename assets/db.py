@@ -3,7 +3,9 @@ from urllib.parse import urlparse, parse_qs
 from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
 from sqlalchemy.sql import func
 from munch import munchify
-import yaml
+import yaml, sys
+from loguru import logger
+
 
 Base = declarative_base()
 
@@ -76,18 +78,15 @@ class Database:
             )
             return queued_items.scalars().all()
 
-    def mark_playlist_downloaded(self, url, title):
-      try:
-        with self.session() as session:
-          stmt = (
-            update(Playlist).
-            where(Playlist.url==url).
-            values(title=title, downloaded_time=func.now)
-            )
-          session.execute(stmt)
-          session.commit()
-      except Exception as e:
-        print(e)
+    def mark_playlist_downloaded(self, qurl, title):
+      logger.debug(qurl)
+      stmt = (
+          update(Playlist)
+          .where(Playlist.url == qurl)
+          .values(title=title)
+      )
+
+        
     def mark_video_downloaded(self, playlist_url, url, title, download_path, elapsed):
       with self.session() as session:
         with session.begin():
@@ -99,7 +98,7 @@ class Database:
             elapsed=elapsed,
             )
           session.add(new_download)
-          session.commit()  
+          session.commit()
 
     def new_queue(self, url):
       with self.session() as session:
