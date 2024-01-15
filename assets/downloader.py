@@ -71,10 +71,9 @@ class queue:
 
 class Downloader:
   debug_init(True, False)
-  
+  wait = False
   StatusStarted=False
   Started=False
-  web_use=False
   host=None
   port=None
   download_path=None
@@ -87,6 +86,7 @@ class Downloader:
   title=None
   playlist_url=None
   PostProcessorStarted=None
+  PlaylistTitle=None
 
   urls=[]
   if __name__ != "__main__":
@@ -105,7 +105,6 @@ class Downloader:
     port:Optional[int]=5000,
   ):
     if not host == None:
-      self.web_use = True
       self.host = host
       self.port = port
       self.download_path = download_path
@@ -194,24 +193,28 @@ class Downloader:
   async def download(self):
     logger.debug(f'self.urls: {self.urls}')
     logger.trace('Start Download Function')
-    for url in self.urls:
-      self.executor.submit(self.download_thread, url)
-      self.urls.remove(url)
-    self.Started = False
-
-  def download_thread(self, url):
+    
+    future = self.executor.submit(self.download_thread)
+    if self.wait:
+      result = future.result()
+      print(result)
+    
+  def download_thread(self):
     logger.trace('Start for loop')
-    self.playlist_url=url
     with yt_dlp.YoutubeDL(self.playlist_title()) as ydl:
       result = ydl.extract_info(url, download=False)
       title_url = result['url']
       playlist = Playlist(title_url)
+      print(result)
       self.PlaylistTitle = playlist.title
 
-
+    
     with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
-      logger.trace('Start with statement')
-      ydl.download(url)
+      for url in self.urls:
+        self.playlist_url=url
+        logger.trace('Start with statement')
+        ydl.download(url)
+    
     logger.debug('At the end')
     self.db.mark_playlist_downloaded(url, self.PlaylistTitle)
     logger.debug("It's over")
