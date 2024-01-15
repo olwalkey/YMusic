@@ -6,6 +6,9 @@ from concurrent.futures import ThreadPoolExecutor
 from pytube import Playlist
 import asyncio
 import sys
+from time import sleep
+
+from queue import Empty
 
 def debug_init(trace, debug):
     logger.remove()
@@ -87,6 +90,7 @@ class Downloader:
   playlist_url=None
   PostProcessorStarted=None
   PlaylistTitle=None
+  downloading=False
 
   urls=[]
   if __name__ != "__main__":
@@ -174,45 +178,52 @@ class Downloader:
     }
     return ydl_opts
   
-  async def queue_dl(self, qurls: Optional[list] = None):
+  async def queue_dl(self, dlq, Shutdown = False, qurls: Optional[list] = None):
     logger.trace(f'Started: {self.Started}')
     logger.debug(qurls)
-    
-    if qurls == None:
-      q = queue()
-      q.fill()
-    elif not self.Started:
-      logger.trace('Starting Download')
-      self.urls = qurls
-      await self.download()
-    else:
-      logger.trace('Print_appending stuff')
-      for url in qurls:
-        self.urls.append(url)
 
-  async def download(self):
+    # On async startup:
+    # Connect to database
+    # find *all* waiting for download
+    # populate Queue
+    # for x in db_waiting:
+    #     Queue.put(x)
+    for x in self.db.QueueNotDone():
+      logger.info(f'retrieved URL from database: {x.title}/{x.url}')
+      dlq.put(x.url)
+    
+    # Thread Main
+    while 1:
+      if Shutdown:
+         ## Close this and exit
+         return
+      try:
+        next = dlq.get(block = True, timeout=1)
+      except Empty:
+        logger.trace('downloader: queue empty')
+        continue
+      await self.download(next)
+
+  async def download(self, next):
     logger.debug(f'self.urls: {self.urls}')
     logger.trace('Start Download Function')
     
-    self.executor.submit(self.download_thread)
+    self.executor.submit(self.download_thread, *[next])
     
-  def download_thread(self):
+  def download_thread(self, url):
+    """ url is the YT url for download """
+    logger.info(f'begin download for {url}')
     logger.trace('Start for loop')
-    for url in self.urls:
-      with yt_dlp.YoutubeDL(self.playlist_title()) as ydl:
-        result = ydl.extract_info(url, download=False)
-        title_url = result['url']
-        playlist = Playlist(title_url)
-        self.PlaylistTitle = playlist.title
+    with yt_dlp.YoutubeDL(self.playlist_title()) as ydl:
+      result = ydl.extract_info(url, download=False)
+      title_url = result['url']
+      playlist = Playlist(title_url)
+      self.PlaylistTitle = playlist.title
 
-      with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
-        self.playlist_url=url
-        logger.trace('Start with statement')
-        ydl.download(url)
-
-        logger.debug('At the end')
-        self.db.mark_playlist_downloaded(url, self.PlaylistTitle)
-        logger.debug("It's over")
+    with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
+      self.playlist_url=url
+      ydl.download(url)
+      self.db.mark_playlist_downloaded(url, self.PlaylistTitle)
 
 
   def getjson(self):

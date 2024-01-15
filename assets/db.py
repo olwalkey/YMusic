@@ -72,11 +72,14 @@ class Database:
         )
 
     def QueueNotDone(self):
-        with self.session() as session:
-            queued_items = session.execute(
-                select(Playlist).filter(Playlist.queue_status == 'queued').order_by(Playlist.create_time.asc())
-            )
-            return queued_items.scalars().all()
+      #with self.session() as session:
+      #  queued_item = session.execute(
+      #      select(Playlist).filter(Playlist.queue_status == 'queued').order_by(Playlist.create_time.asc())
+      #  ).scalar()
+        
+      with self.session() as session:
+        for item in session.execute(select(Playlist).filter(Playlist.queue_status == 'queued').order_by(Playlist.create_time.asc())).scalars().all():
+          yield item
 
     def mark_playlist_downloaded(self, qurl, title):
       try:

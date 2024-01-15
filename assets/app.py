@@ -11,6 +11,7 @@ import db
 from loguru import logger
 import sys
 import asyncio
+from queue import Queue
 
 def debug_init(trace, debug):
     logger.remove()
@@ -23,7 +24,7 @@ def debug_init(trace, debug):
         pass
     pass
 
-debug_init(False, False)
+debug_init(True, False)
 
 fake_users_db = {
     "johndoe": {
@@ -85,14 +86,14 @@ async def get_current_active_user(
 
 
 class Download:
-  def __init__(self):
+  def __init__(self, download_queue):
     self.database = db.Database()
+    self.database.db_create()
+    self.dlq = download_queue
 
   async def download(self, url):
     logger.trace('Download route got')
-    data = db.Database()
     logger.trace('create db.Database instance')
-    data.db_create()
     logger.trace('Create tables')
     try:
       
@@ -100,19 +101,11 @@ class Download:
       self.database.new_queue(url=url)
       
       logger.trace('init queue instance')
-      q = queue()
-      logger.trace('queue.fill')
-      self.myqueue = q.fill()
-      queue_list = []
-      logger.trace('fill queue_list dict')
-      for queue_item in self.myqueue:
-        queue_list.append(queue_item.url)
-      logger.debug(queue_list)
-      logger.trace('youtube.queue_dl')
-      await youtube.queue_dl(queue_list)
+      self.download_queue.put(url)
       
       return {'message': 'Download request received and queued',
               'error': None}
+      
     except IntegrityError as e:
       return {
         'message': f'Duplicate Entry. Link already exists!',
@@ -132,7 +125,8 @@ class Download:
 
 
 
-download = Download()
+download_queue = Queue()
+download = Download(download_queue)
 
 @app.get('/download/{url}')
 #?  add this to download_route function to enable token authentication", token: Annotated[str, Depends(oauth2_scheme)]"
@@ -172,12 +166,9 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
 
     return {"access_token": user.username, "token_type": "bearer"}
 
-
-
-
 if __name__ == '__main__':
   import uvicorn
-  data = db.Database()
-  data.db_create()
-  asyncio.run(youtube.queue_dl())
+  #data = db.Database()
+  #data.db_create()
+  asyncio.run(youtube.queue_dl(dlq=download_queue))
   uvicorn.run(app, host='0.0.0.0', port=config.port)
