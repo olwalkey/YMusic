@@ -194,30 +194,25 @@ class Downloader:
     logger.debug(f'self.urls: {self.urls}')
     logger.trace('Start Download Function')
     
-    future = self.executor.submit(self.download_thread)
-    if self.wait:
-      result = future.result()
-      print(result)
+    self.executor.submit(self.download_thread)
     
   def download_thread(self):
     logger.trace('Start for loop')
-    with yt_dlp.YoutubeDL(self.playlist_title()) as ydl:
-      result = ydl.extract_info(url, download=False)
-      title_url = result['url']
-      playlist = Playlist(title_url)
-      print(result)
-      self.PlaylistTitle = playlist.title
+    for url in self.urls:
+      with yt_dlp.YoutubeDL(self.playlist_title()) as ydl:
+        result = ydl.extract_info(url, download=False)
+        title_url = result['url']
+        playlist = Playlist(title_url)
+        self.PlaylistTitle = playlist.title
 
-    
-    with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
-      for url in self.urls:
+      with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
         self.playlist_url=url
         logger.trace('Start with statement')
         ydl.download(url)
-    
-    logger.debug('At the end')
-    self.db.mark_playlist_downloaded(url, self.PlaylistTitle)
-    logger.debug("It's over")
+
+        logger.debug('At the end')
+        self.db.mark_playlist_downloaded(url, self.PlaylistTitle)
+        logger.debug("It's over")
 
 
   def getjson(self):
