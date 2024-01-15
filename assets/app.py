@@ -24,7 +24,7 @@ def debug_init(trace, debug):
         pass
     pass
 
-debug_init(True, False)
+debug_init(False, False)
 
 fake_users_db = {
     "johndoe": {
