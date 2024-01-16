@@ -12,6 +12,8 @@ from loguru import logger
 import sys
 import asyncio
 from queue import Queue
+from concurrent.futures import ThreadPoolExecutor
+
 
 def debug_init(trace, debug):
     logger.remove()
@@ -24,7 +26,7 @@ def debug_init(trace, debug):
         pass
     pass
 
-debug_init(False, False)
+debug_init(True, False)
 
 fake_users_db = {
     "johndoe": {
@@ -85,11 +87,13 @@ async def get_current_active_user(
     return current_user
 
 
+
 class Download:
   def __init__(self, download_queue):
     self.database = db.Database()
     self.database.db_create()
     self.dlq = download_queue
+
 
   async def download(self, url):
     logger.trace('Download route got')
@@ -101,7 +105,7 @@ class Download:
       self.database.new_queue(url=url)
       
       logger.trace('init queue instance')
-      self.download_queue.put(url)
+      self.dlq.put(url)
       
       return {'message': 'Download request received and queued',
               'error': None}
@@ -122,7 +126,6 @@ class Download:
       'message': f'An Error Occured', 
       'error': e
         }
-
 
 
 download_queue = Queue()
@@ -166,9 +169,18 @@ async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
 
     return {"access_token": user.username, "token_type": "bearer"}
 
+
+def run_uvicorn():
+  uvicorn.run(app, host='0.0.0.0', port=config.port)
+
+def run_asyncio():
+  asyncio.run(youtube.queue_dl(dlq=download_queue))
+
 if __name__ == '__main__':
   import uvicorn
   #data = db.Database()
   #data.db_create()
-  asyncio.run(youtube.queue_dl(dlq=download_queue))
-  uvicorn.run(app, host='0.0.0.0', port=config.port)
+  
+  with ThreadPoolExecutor(max_workers=2) as executor:
+      future1 = executor.submit(run_asyncio)
+      future2 = executor.submit(run_uvicorn)

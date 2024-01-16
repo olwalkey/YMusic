@@ -79,6 +79,7 @@ class Database:
         
       with self.session() as session:
         for item in session.execute(select(Playlist).filter(Playlist.queue_status == 'queued').order_by(Playlist.create_time.asc())).scalars().all():
+          logger.info(f'Retrieved URL from database: {item.url}')
           yield item
 
     def mark_playlist_downloaded(self, qurl, title):
@@ -96,6 +97,7 @@ class Database:
         with self.session() as session:
           with session.begin():
             session.execute(stmt)
+            logger.info(f'Marked playlist {qurl} as downloaded')
       except Exception as e:
         logger.error(e)
         
