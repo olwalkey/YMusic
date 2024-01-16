@@ -159,7 +159,7 @@ class Downloader:
       'progress_hooks': [self.progress_hook],
       'postprocessor_hooks': [self.postprocessor_hooks],
       'writethumbnail': True,
-      'outtmpl': 'downloads/%(artist)s/%(playlist_title)s/%(playlist_autonumber)s - %(title)s.%(ext)s',
+      'outtmpl': 'downloads/%(playlist_title)s/%(playlist_autonumber)s - %(title)s.%(ext)s',
       'skip_broken': True,
       'ignoreerrors': True,
       'postprocessors': [
