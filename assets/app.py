@@ -1,18 +1,29 @@
-import yaml
-from typing import Annotated
-from fastapi import FastAPI, HTTPException, Depends, status
-from fastapi.responses import JSONResponse, FileResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from munch import munchify, unmunchify
-from downloader import Downloader, queue
-from sqlalchemy.exc import IntegrityError
-from pydantic import BaseModel
-import db
-from loguru import logger
-import sys
+import secrets
 import asyncio
-from queue import Queue
 from concurrent.futures import ThreadPoolExecutor
+import sys
+
+
+from typing import Annotated
+
+from loguru import logger
+from munch import munchify, unmunchify
+import yaml
+
+from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+
+
+
+from sqlalchemy.exc import IntegrityError
+
+from downloader import Downloader, queue
+import db
+
+
+
+from queue import Queue
 
 
 def debug_init(trace, debug):
@@ -28,64 +39,41 @@ def debug_init(trace, debug):
 
 debug_init(False, False)
 
-fake_users_db = {
-    "johndoe": {
-        "username": "johndoe",
-        "full_name": "John Doe",
-        "email": "johndoe@example.com",
-        "hashed_password": "fakehashedsecret",
-        "disabled": False,
-    },
-    "alice": {
-        "username": "alice",
-        "full_name": "Alice Wonderson",
-        "email": "alice@example.com",
-        "hashed_password": "fakehashedsecret2",
-        "disabled": True,
-    },
-}
-
 
 with open('./config.yaml') as stream:
   try:
     yamlfile = yaml.safe_load(stream)
+    config = munchify(yamlfile)
   except yaml.YAMLError as exc:
     print(exc)
-config = munchify(yamlfile)
+    raise ValueError("Please check your config file!")
 
 app = FastAPI(debug=False)
+security = HTTPBasic()
+
 youtube = Downloader()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-class User(BaseModel):
-  username: str
-  email: str | None = None
-  full_name: str | None = None
-  disabled: bool | None = None
 
-def fake_decode_token(token):
-  return User(
-    username=token + "fakedecoded", email="john@example.com", full_name="John Doe"
-  )
-
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
-    user = fake_decode_token(token)
-    if not user:
+def get_current_username(
+    credentials: Annotated[HTTPBasicCredentials, Depends(security)]
+):
+    current_username_bytes = credentials.username.encode("utf8")
+    correct_username_bytes = bytes(config.username, 'utf-8') # type: ignore
+    is_correct_username = secrets.compare_digest(
+        current_username_bytes, correct_username_bytes
+    )
+    current_password_bytes = credentials.password.encode("utf8")
+    correct_password_bytes = bytes(config.password, 'utf-8') # type: ignore
+    is_correct_password = secrets.compare_digest(
+        current_password_bytes, correct_password_bytes
+    )
+    if not (is_correct_username and is_correct_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Basic"},
         )
-    return user
-
-
-async def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)]
-):
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
-
+    return credentials.username
 
 
 class Download:
@@ -131,9 +119,13 @@ class Download:
 download_queue = Queue()
 download = Download(download_queue)
 
+
+@app.get("/users/me")
+def read_current_user(username: Annotated[str, Depends(get_current_username)]):
+    return {"username": username}
+
 @app.get('/download/{url}')
-#?  add this to download_route function to enable token authentication", token: Annotated[str, Depends(oauth2_scheme)]"
-async def download_route(url: str):
+async def download_route(username: Annotated[str, Depends(get_current_username)], url: str):
   return await download.download(url)
 
 @app.get('/ping')
@@ -141,33 +133,10 @@ async def ping():
   return {'ping': 'pong'}
 
 @app.get('/getjson')
-async def get_json():
+async def get_json(username: Annotated[str, Depends(get_current_username)]):
   data = youtube.getjson()
   data = unmunchify(data)
   return JSONResponse(content=data)
-
-
-@app.get("/users/me")
-async def read_users_me(current_user: Annotated[User, Depends(get_current_active_user)]):
-    return current_user
-
-class UserInDB(User):
-    hashed_password: str
-
-def fake_hash_password(password: str):
-    return "fakehashed" + password
-
-@app.post("/token")
-async def login(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-    user_dict = fake_users_db.get(form_data.username)
-    if not user_dict:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
-    user = UserInDB(**user_dict)
-    hashed_password = fake_hash_password(form_data.password)
-    if not hashed_password == user.hashed_password:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
-
-    return {"access_token": user.username, "token_type": "bearer"}
 
 
 def run_uvicorn():
@@ -178,8 +147,6 @@ def run_asyncio():
 
 if __name__ == '__main__':
   import uvicorn
-  #data = db.Database()
-  #data.db_create()
   
   with ThreadPoolExecutor(max_workers=2) as executor:
       future1 = executor.submit(run_asyncio)

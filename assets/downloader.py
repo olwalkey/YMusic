@@ -3,7 +3,6 @@ from munch import munchify
 from typing import Optional
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor
-from pytube import Playlist
 import asyncio
 import sys
 from time import sleep
