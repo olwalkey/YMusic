@@ -12,6 +12,11 @@ debug = False
 trace = False
 
 
+obj = munchify({})
+assert isinstance(obj, Munch)
+port = obj['port']
+
+
 def debug_init(trace, debug):
     logger.remove()
     if debug:
@@ -47,9 +52,13 @@ app = Typer(no_args_is_help=True, add_completion=False)
 with open('config.yaml') as stream:
     try:
         yamlfile = yaml.safe_load(stream)
+        if yamlfile is not None:
+          loadedyaml = munchify(yamlfile)
+        else:
+          raise FileNotFoundError('File Either does not exist, or it is formatted incorrectly')
     except yaml.YAMLError as exc:
         print(exc)
-loadedyaml = munchify(yamlfile)
+        raise ValueError('Config failed to load Properly!')
 
 
 
