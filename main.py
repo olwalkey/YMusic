@@ -83,7 +83,7 @@ def audio(
     logger.trace(f'Full Urls: {urls}')
     for x in url:
         logger.debug(f'http://{loadedyaml.host}:{loadedyaml.port}/download/{x[0]}')
-        response = requests.get(f'http://{loadedyaml.host}:{loadedyaml.port}/download/{x[0]}')
+        response = requests.get(f'http://{loadedyaml.host}:{loadedyaml.port}/download/{x[0]}', auth=(loadedyaml.username, loadedyaml.password))
         if response.status_code == 200:
             logger.info(response.json())
         else:

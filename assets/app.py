@@ -15,7 +15,6 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 
-
 from sqlalchemy.exc import IntegrityError
 
 from downloader import Downloader, queue
