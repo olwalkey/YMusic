@@ -7,7 +7,6 @@ on:
     branches: [ "master" ]
 
 jobs:
-
  push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
@@ -17,13 +16,13 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-     
+      
       - name: Check out the repo
         uses: actions/checkout@v4
       
       - name: Get version from file
         id: get_version
-        run: echo "::set-output name=VERSION::$(cat version)"
+        run: echo "VERSION=$(cat version)" >> $GITHUB_OUTPUT
       
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -33,7 +32,7 @@ jobs:
       
       - name: Create latest tag
         id: create_latest_tag
-        run: echo "::set-output name=LATEST::latest"
+        run: echo "LATEST=latest" >> $GITHUB_OUTPUT
       
       - name: Build and push Docker image
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
