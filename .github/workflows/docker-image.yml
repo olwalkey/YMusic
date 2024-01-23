@@ -1,14 +1,14 @@
 name: Docker Image CI
 
 on:
-  push:
+ push:
     branches: [ "master" ]
-  pull_request:
+ pull_request:
     branches: [ "master" ]
 
 jobs:
 
-  push_to_registry:
+ push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     steps:
@@ -29,7 +29,11 @@ jobs:
         id: meta
         uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
         with:
-          images: naterfute/youtube-download
+          images: naterfute/youtube-downloader
+      
+      - name: Create latest tag
+        id: create_latest_tag
+        run: echo "::set-output name=LATEST::latest"
       
       - name: Build and push Docker image
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
@@ -37,5 +41,5 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }},${{ steps.get_version.outputs.VERSION }}
+          tags: ${{ steps.meta.outputs.tags }},${{ steps.get_version.outputs.VERSION }},${{ steps.create_latest_tag.outputs.LATEST }}
           labels: ${{ steps.meta.outputs.labels }}
