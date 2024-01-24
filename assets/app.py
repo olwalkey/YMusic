@@ -36,7 +36,6 @@ def debug_init(trace, debug):
         pass
     pass
 
-debug_init(False, False)
 
 
 with open('./config.yaml') as stream:
@@ -47,7 +46,9 @@ with open('./config.yaml') as stream:
     print(exc)
     raise ValueError("Please check your config file!")
 
-app = FastAPI(debug=False)
+debug_init(config.debug, config.debug)
+
+app = FastAPI(debug=config.debug)
 security = HTTPBasic()
 
 youtube = Downloader()

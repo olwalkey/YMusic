@@ -4,6 +4,8 @@ port: 5000
 username: default
 password: default
 
+debug: False
+
 db:
 ## Does nothing yet
   host: localhost
