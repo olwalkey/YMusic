@@ -3,6 +3,7 @@ from munch import munchify
 from typing import Optional
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor
+from pytube import Playlist
 import asyncio
 import sys
 from time import sleep
@@ -215,10 +216,13 @@ class Downloader:
     logger.trace('Start for loop')
     with yt_dlp.YoutubeDL(self.playlist_title()) as ydl:
       result = ydl.extract_info(url, download=False)
-      title_url = result['url']
-      playlist = Playlist(title_url)
-      self.PlaylistTitle = playlist.title
-
+      if result is not None:
+        title_url = result['url']
+        playlist = Playlist(title_url)
+        logger.trace(f'Playlist: {playlist}')
+        self.PlaylistTitle = playlist.title
+      else:
+        logger.error(f"Couldn't extract info for URL: {url}")
     with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
       self.playlist_url=url
       ydl.download(url)
