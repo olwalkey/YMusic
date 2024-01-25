@@ -8,7 +8,7 @@ import asyncio
 import sys
 from time import sleep
 
-from queue import Empty
+from queue import Empty, Queue
 
 def debug_init(trace, debug):
     logger.remove()
@@ -219,7 +219,7 @@ class Downloader:
     }
     return ydl_opts
   
-  async def queue_dl(self, dlq, Shutdown = False, qurls: Optional[list] = None):
+  async def queue_dl(self, dlq: Queue, Shutdown = False, qurls: Optional[list] = None):
     logger.trace(f'Started: {self.Started}')
     logger.debug(qurls)
 
@@ -231,12 +231,11 @@ class Downloader:
     #     Queue.put(x)
     for x in self.db.QueueNotDone():
       logger.info(f'retrieved URL from database: {x.title}/{x.url}')
-      dlq.put(x.url)
+      dlq.put({'url':x.url, 'vidtype':x.vidtype})
     
     # Thread Main
     while 1:
       if Shutdown:
-         ## Close this and exit
          return
       try:
         next = dlq.get(block = True, timeout=1)
@@ -247,6 +246,7 @@ class Downloader:
 
   async def download(self, next):
     logger.debug(f'self.urls: {self.urls}')
+    logger.debug(f'next: {next.url}/{next.vidtype}')
     logger.trace('Start Download Function')
     
     self.executor.submit(self.download_thread, *[next])

@@ -22,7 +22,7 @@ class Playlist(Base):
   __tablename__ = 'playlists'
   id = Column(Integer, autoincrement=True, primary_key=True)
   title = Column(String, default=None)
-  vidtype = Column(Enum('video', 'audio'))
+  vidtype = Column(Enum('video', 'audio', name='vidtype'), default='audio')
   url = Column(String, unique=True)
   queue_status = Column(Enum('queued', 'in_progress', 'completed', name='queue_status'), default='queued')
   create_time = Column(TIMESTAMP, default=func.now())
@@ -81,7 +81,7 @@ class Database:
         
       with self.session() as session:
         for item in session.execute(select(Playlist).filter(Playlist.queue_status == 'queued').order_by(Playlist.create_time.asc())).scalars().all():
-          logger.info(f'Retrieved URL from database: {item.url}')
+          logger.info(f'Retrieved URL from database: {item.url}, {item.vidtype}')
           yield item
 
     def mark_playlist_downloaded(self, qurl, title):
