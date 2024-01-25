@@ -22,7 +22,7 @@ class Playlist(Base):
   __tablename__ = 'playlists'
   id = Column(Integer, autoincrement=True, primary_key=True)
   title = Column(String, default=None)
-  type = Column(Enum('Video', 'Audio'))
+  vidtype = Column(Enum('video', 'audio'))
   url = Column(String, unique=True)
   queue_status = Column(Enum('queued', 'in_progress', 'completed', name='queue_status'), default='queued')
   create_time = Column(TIMESTAMP, default=func.now())
@@ -107,7 +107,7 @@ class Database:
       with self.session() as session:
         with session.begin():
           new_download = Downloaded(
-            title=title, 
+            title=title,
             playlist_url=playlist_url,
             url=url, 
             path=download_path, 
@@ -116,10 +116,10 @@ class Database:
           session.add(new_download)
           session.commit()
 
-    def new_queue(self, url):
+    def new_queue(self, url, vidtype):
       with self.session() as session:
         with session.begin():
-          new_queue = Playlist(title=None, url=url, queue_status='queued')
+          new_queue = Playlist(title=None, vidtype=vidtype, url=url, queue_status='queued')
           session.add(new_queue)
           session.commit()
 

@@ -83,14 +83,14 @@ class Download:
     self.dlq = download_queue
 
 
-  async def download(self, url):
+  async def download(self, url, vidtype):
     logger.trace('Download route got')
     logger.trace('create db.Database instance')
     logger.trace('Create tables')
     try:
       
       logger.trace('new queue')
-      self.database.new_queue(url=url)
+      self.database.new_queue(url=url, vidtype=vidtype)
       
       logger.trace('init queue instance')
       self.dlq.put(url)
@@ -124,10 +124,9 @@ download = Download(download_queue)
 def read_current_user(username: Annotated[str, Depends(get_current_username)]):
     return {"username": username}
 
-@app.get('/download/{type}/{url}/')
-async def download_audio_route(username: Annotated[str, Depends(get_current_username)], type:int,  url: str):
-  return await download.download(url, type)
-
+@app.get('/download/{dltype}/{url}/')
+async def download_audio_route(username: Annotated[str, Depends(get_current_username)], dltype:int,  url: str):
+  return await download.download(url, dltype)
 
 @app.get('/ping')
 async def ping():
