@@ -1,22 +1,28 @@
 from sqlalchemy import create_engine, Column, String, Integer, Sequence, TIMESTAMP, Boolean, Enum, select, ForeignKey, update
 from urllib.parse import urlparse, parse_qs
 from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
+from typing import Any, TypedDict, cast
 from sqlalchemy.sql import func
 from munch import munchify
 import yaml, sys
 from loguru import logger
 
-
 Base = declarative_base()
 
-with open("./config.yaml") as f:
+try: 
+  with open("./config.yaml") as f:
     yamlfile = yaml.safe_load(f)
+except yaml.error.YAMLError as e:
+  logger.error(f'Failed to load yaml file: {e}')
+  sys.exit()
+  
 config = munchify(yamlfile)
 
 class Playlist(Base):
   __tablename__ = 'playlists'
   id = Column(Integer, autoincrement=True, primary_key=True)
   title = Column(String, default=None)
+  type = Column(Enum('Video', 'Audio'))
   url = Column(String, unique=True)
   queue_status = Column(Enum('queued', 'in_progress', 'completed', name='queue_status'), default='queued')
   create_time = Column(TIMESTAMP, default=func.now())
@@ -43,7 +49,7 @@ def spliturl(url: list):
   Returns:
       string: End of youtube url
   """
-  parsed_url = urlparse(url)
+  parsed_url = urlparse(url) #type: ignore
 
   query_params = parse_qs(parsed_url.query)
   video_id = query_params.get('v')
@@ -56,15 +62,15 @@ def spliturl(url: list):
 
 class Database:
     engine = None
-    session = None
 
     def __init__(self):
         self.connect(config.db.host, config.db.port, config.db.user, config.db.password, config.db.db)
 
-    def connect(self, host: config.db.host, port: config.db.port, user: config.db.user, password: config.db.password, database: config.db.db):
+    def connect(self, host, port, user, password, database):
         self.engine = create_engine(
             f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}",
-            echo=False # Set to False in production
+            echo=False,
+            connect_args={"options": "-c timezone=utc"}
         )
 
         self.session = sessionmaker(
@@ -72,10 +78,6 @@ class Database:
         )
 
     def QueueNotDone(self):
-      #with self.session() as session:
-      #  queued_item = session.execute(
-      #      select(Playlist).filter(Playlist.queue_status == 'queued').order_by(Playlist.create_time.asc())
-      #  ).scalar()
         
       with self.session() as session:
         for item in session.execute(select(Playlist).filter(Playlist.queue_status == 'queued').order_by(Playlist.create_time.asc())).scalars().all():
@@ -127,7 +129,7 @@ class Database:
 
     def reconnect(self):
       self.session.close_all()
-      self.connect()
+      self.connect(config.db.host, config.db.port, config.db.user, config.db.password, config.db.db)
 
     def __enter__(self):
       return self

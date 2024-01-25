@@ -124,9 +124,10 @@ download = Download(download_queue)
 def read_current_user(username: Annotated[str, Depends(get_current_username)]):
     return {"username": username}
 
-@app.get('/download/{url}')
-async def download_route(username: Annotated[str, Depends(get_current_username)], url: str):
-  return await download.download(url)
+@app.get('/download/{type}/{url}/')
+async def download_audio_route(username: Annotated[str, Depends(get_current_username)], type:int,  url: str):
+  return await download.download(url, type)
+
 
 @app.get('/ping')
 async def ping():

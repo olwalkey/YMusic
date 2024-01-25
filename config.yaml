@@ -7,7 +7,6 @@ password: default
 debug: False
 
 db:
-## Does nothing yet
   host: localhost
   port: 5432
   db: youtube
