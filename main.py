@@ -63,36 +63,44 @@ with open('config.yaml') as stream:
 
 
 @app.command()
-def audio(
-        trace: Optional[bool] = Option(False, '-t', '--trace', is_flag=True, help='Enable trace-level debugging.'),
-        debug: Optional[bool] = Option(False, '-d', '--debug', is_flag=True, help='Enables debug'),
-        urls: list[str] = Argument(),
+def download(
+    trace: Optional[bool] = Option(False, '-t', '--trace', is_flag=True, help='Enable trace-level debugging.'),
+    debug: Optional[bool] = Option(False, '-d', '--debug', is_flag=True, help='Enables debug'),
+    audio: Optional[bool] = Option(True, '-a', '--audio', is_flag=True, help='Weather to downloade audio or video'),
+    urls: list[str] = Argument(),
+    
 ):
+  #? 0: Audio
+  #? 1: Video
     debug_init(trace, debug)
-
+    if audio:
+      dltype = 'audio'
+    else: 
+      dltype = 'video'
+      
     try:
-        r = requests.get(f'http://{loadedyaml.host}:{loadedyaml.port}/ping')
-        r = munchify(r.json())
-        logger.info(f'Pinging server: {r.ping}')
-        logger.debug(r)
+      r = requests.get(f'http://{loadedyaml.host}:{loadedyaml.port}/ping')
+      r = munchify(r.json())
+      logger.info(f'Pinging server: {r.ping}')
+      logger.debug(r)
     except RequestException as e:
-        logger.warning('Failed to connect to webserver run in debug to see more info')
-        logger.info("Try making sure the webserver is up and your calling the right host and port!")
-        logger.info(f"current host:{loadedyaml.host} port:{loadedyaml.port}")
-        logger.debug(e)
-        sys.exit()
+      logger.warning('Failed to connect to webserver run in debug to see more info')
+      logger.info("Try making sure the webserver is up and your calling the right host and port!")
+      logger.info(f"current host:{loadedyaml.host} port:{loadedyaml.port}")
+      logger.debug(e)
+      sys.exit()
         
     url = spliturl(urls)
     if url == []:
-        logger.error('Url Is empty! exiting')
-        sys.exit()
+      logger.error('Url Is empty! exiting')
+      sys.exit()
     else:
-        pass
+      pass
     
     logger.trace(f'Full Urls: {urls}')
     for x in url:
-        logger.debug(f'http://{loadedyaml.host}:{loadedyaml.port}/download/{x[0]}')
-        response = requests.get(f'http://{loadedyaml.host}:{loadedyaml.port}/download/{x[0]}', auth=(loadedyaml.username, loadedyaml.password))
+        logger.debug(f'http://{loadedyaml.host}:{loadedyaml.port}/download/{dltype}/{x[0]}')
+        response = requests.get(f'http://{loadedyaml.host}:{loadedyaml.port}/download/{dltype}/{x[0]}', auth=(loadedyaml.username, loadedyaml.password))
         if response.status_code == 200:
             logger.info(response.json())
         else:
