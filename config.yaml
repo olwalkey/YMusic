@@ -6,6 +6,8 @@ password: default
 
 debug: False
 
+ratelimit: None
+
 db:
   host: localhost
   port: 5432
