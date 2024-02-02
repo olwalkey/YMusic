@@ -91,7 +91,7 @@ class Database:
             update(Playlist)
             .where(Playlist.url == qurl)
             .values(
-              title=title, 
+              title=title,
               queue_status='completed',
               downloaded_time=func.now()
             )
@@ -99,7 +99,7 @@ class Database:
         with self.session() as session:
           with session.begin():
             session.execute(stmt)
-            logger.info(f'Marked playlist {qurl} as downloaded')
+            logger.info(f'Marked playlist "{qurl}" as downloaded')
       except Exception as e:
         logger.error(e)
         

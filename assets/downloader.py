@@ -26,9 +26,11 @@ debug_init(False, False)
 if __name__ != '__main__':
   try:
     from db import Database
+    db = Database()
   except ImportError:
     try: 
       from .db import Database
+      db = Database()
     except:
       exit()
 else:
@@ -57,10 +59,10 @@ class MyLogger:
 
 class queue:
   started=False
-  if __name__ != "__main__":
-    db = Database()
-  else:
-    pass
+
+  def __init__(self):
+    self.db = db
+    
   def fill(self):
     """returns all non downloaded items in the database
 
@@ -116,10 +118,7 @@ class Downloader:
   downloading=False
 
   urls=[]
-  if __name__ != "__main__":
-    db = Database()
-  else: 
-    pass
+
   
   loop = asyncio.get_event_loop()
   executor = ThreadPoolExecutor(max_workers=1)
@@ -131,6 +130,7 @@ class Downloader:
     download_path:Optional[str]='downloads/', 
     port:Optional[int]=5000,
   ):
+    self.db = db
     if not host == None:
       self.host = host
       self.port = port
@@ -139,34 +139,34 @@ class Downloader:
   def progress_hook(self, d):
     d = munchify(d)
     
-    if d.status == 'error':
-      pass
-    
-    if d.status == 'finished':
-      logger.trace(f'Done Downloading "{d["filename"]}"')
-      self.StatusStarted = False
-      self.filename = d['filename']
-      self.time_elapse = d['elapsed']
-      self.PostProcessorStarted=False
-    if d.status == 'downloading':
-      if not self.StatusStarted:
-        logger.trace(f'Now Downloading "{d["tmpfilename"]}"')    
-        self.StatusStarted = True
+    if d.status == 'error':   #type: ignore
+      pass    #type: ignore
+        #type: ignore
+    if d.status == 'finished':    #type: ignore
+      logger.trace(f'Done Downloading "{d["filename"]}"')   #type: ignore
+      self.StatusStarted = False    #type: ignore
+      self.filename = d['filename']   #type: ignore
+      self.time_elapse = d['elapsed']   #type: ignore
+      self.PostProcessorStarted=False   #type: ignore
+    if d.status == 'downloading':   #type: ignore
+      if not self.StatusStarted:    #type: ignore
+        logger.trace(f'Now Downloading "{d["tmpfilename"]}"')       #type: ignore
+        self.StatusStarted = True   #type: ignore
 
-      self.filename = d['tmpfilename']
-      self.percent = d['_percent_str']
-      self.eta = d['_eta_str']
-        
-  def postprocessor_hooks(self, d):
-    d = munchify(d)
-    if d.status == 'started':
-      info = munchify(d['info_dict'])
-      self.url = info.webpage_url
-      self.title = info.title
-      self.download_path = info.filepath
-      self.Status = 'Started'
+      self.filename = d['tmpfilename']    #type: ignore
+      self.percent = d['_percent_str']    #type: ignore
+      self.eta = d['_eta_str']    #type: ignore
+
+  def postprocessor_hooks(self, d):   #type: ignore
+    d = munchify(d)   #type: ignore
+    if d.status == 'started':   #type: ignore
+      info = munchify(d['info_dict'])   #type: ignore
+      self.url = info.webpage_url   #type: ignore
+      self.title = info.title   #type: ignore
+      self.download_path = info.filepath    #type: ignore
+      self.Status = 'Started'   #type: ignore
       pass
-    if d.status == 'finished':
+    if d.status == 'finished':    #type: ignore
       logger.trace('PostProcessor Hook finished')
       if not self.PostProcessorStarted:
         self.db.mark_video_downloaded(playlist_url=self.playlist_url, url=self.url, title=self.title, download_path=self.download_path, elapsed=self.time_elapse)
