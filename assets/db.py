@@ -64,7 +64,7 @@ class Database:
     engine = None
 
     def __init__(self):
-        self.connect(config.db.host, config.db.port, config.db.user, config.db.password, config.db.db)
+        self.connect(config.db.host, config.db.port, config.db.user, config.db.password, config.db.db) #type: ignore
 
     def connect(self, host, port, user, password, database):
         self.engine = create_engine(
@@ -124,12 +124,12 @@ class Database:
           session.commit()
 
     def db_create(self):
-      with self.engine.begin() as conn:
+      with self.engine.begin() as conn: #type: ignore
         Base.metadata.create_all(conn)
 
     def reconnect(self):
       self.session.close_all()
-      self.connect(config.db.host, config.db.port, config.db.user, config.db.password, config.db.db)
+      self.connect(config.db.host, config.db.port, config.db.user, config.db.password, config.db.db) #type: ignore
 
     def __enter__(self):
       return self
