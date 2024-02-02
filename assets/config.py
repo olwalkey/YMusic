@@ -20,6 +20,7 @@ class AppConfig(BaseModel):
   user: str
   password: str
   debug: bool
+  trace: bool
   ratelimit: Optional[int]
   db: DbConfig
 

@@ -5,6 +5,7 @@ username: default
 password: default
 
 debug: False
+trace: False
 
 ratelimit: None
 
