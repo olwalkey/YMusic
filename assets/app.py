@@ -36,7 +36,7 @@ def debug_init(trace, debug):
     pass
 
 
-debug_init(config.debug, config.debug)
+debug_init(config.trace, config.debug)
 
 app = FastAPI(debug=config.debug)
 security = HTTPBasic()
