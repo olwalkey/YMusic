@@ -19,8 +19,7 @@ from sqlalchemy.exc import IntegrityError
 
 from downloader import Downloader, queue
 import db
-
-
+from config import config
 
 from queue import Queue
 
@@ -36,15 +35,6 @@ def debug_init(trace, debug):
         pass
     pass
 
-
-
-with open('./config.yaml') as stream:
-  try:
-    yamlfile = yaml.safe_load(stream)
-    config = munchify(yamlfile)
-  except yaml.YAMLError as exc:
-    print(exc)
-    raise ValueError("Please check your config file!")
 
 debug_init(config.debug, config.debug)
 

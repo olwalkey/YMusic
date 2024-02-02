@@ -3,20 +3,13 @@ from urllib.parse import urlparse, parse_qs
 from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
 from typing import Any, TypedDict, cast
 from sqlalchemy.sql import func
-from munch import munchify
-import yaml, sys
 from loguru import logger
-
+from config import config
+  
 Base = declarative_base()
 
-try: 
-  with open("./config.yaml") as f:
-    yamlfile = yaml.safe_load(f)
-except yaml.error.YAMLError as e:
-  logger.error(f'Failed to load yaml file: {e}')
-  sys.exit()
-  
-config = munchify(yamlfile)
+
+
 
 class Playlist(Base):
   __tablename__ = 'playlists'
