@@ -7,14 +7,14 @@ from loguru import logger
 import requests
 import yaml
 import sys
+from assets.config import config
+
 
 debug = False
 trace = False
 
 
 obj = munchify({})
-assert isinstance(obj, Munch)
-port = obj['port']
 
 
 def debug_init(trace, debug):
@@ -66,27 +66,29 @@ with open('config.yaml') as stream:
 def download(
     trace: Optional[bool] = Option(False, '-t', '--trace', is_flag=True, help='Enable trace-level debugging.'),
     debug: Optional[bool] = Option(False, '-d', '--debug', is_flag=True, help='Enables debug'),
-    audio: Optional[bool] = Option(True, '-a', '--audio', is_flag=True, help='Weather to downloade audio or video'),
+    audio: Optional[bool] = Option(True, '-a', '--audio', is_flag=True, help='Whether to download Audio'),
+    video: Optional[bool] = Option(False, '-v', '--video', is_flag=True, help='Whether to download Video'),
     urls: list[str] = Argument(),
     
 ):
-  #? 0: Audio
-  #? 1: Video
     debug_init(trace, debug)
+    if video:
+      audio=False
     if audio:
       dltype = 'audio'
     else: 
       dltype = 'video'
+    
       
     try:
-      r = requests.get(f'http://{loadedyaml.host}:{loadedyaml.port}/ping')
+      r = requests.get(f'http://{config.host}:{config.port}/ping')
       r = munchify(r.json())
-      logger.info(f'Pinging server: {r.ping}')
+      logger.info(f'Pinging server: {r.ping}') #type: ignore
       logger.debug(r)
     except RequestException as e:
       logger.warning('Failed to connect to webserver run in debug to see more info')
       logger.info("Try making sure the webserver is up and your calling the right host and port!")
-      logger.info(f"current host:{loadedyaml.host} port:{loadedyaml.port}")
+      logger.info(f"current host:{config.host} port:{config.port}")
       logger.debug(e)
       sys.exit()
         
@@ -99,8 +101,8 @@ def download(
     
     logger.trace(f'Full Urls: {urls}')
     for x in url:
-        logger.debug(f'http://{loadedyaml.host}:{loadedyaml.port}/download/{dltype}/{x[0]}')
-        response = requests.get(f'http://{loadedyaml.host}:{loadedyaml.port}/download/{dltype}/{x[0]}', auth=(loadedyaml.username, loadedyaml.password))
+        logger.debug(f'http://{config.host}:{config.port}/download/{dltype}/{x[0]}')
+        response = requests.get(f'http://{config.host}:{config.port}/download/{dltype}/{x[0]}', auth=(config.username, config.password))
         if response.status_code == 200:
             logger.info(response.json())
         else:
