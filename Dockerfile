@@ -5,7 +5,7 @@ WORKDIR /app
 RUN apk add --no-cache ffmpeg \
     && apk add --virtual build-deps gcc python3-dev musl-dev postgresql-dev \
     && pip install --upgrade pip
-COPY ./assets/* ./requirements.txt ./config.yaml /app/
+COPY ./assets/app.py ./assets/downloader.py ./assets/db.py ./assets/config.py ./requirements.txt ./config.yaml /app/
 
 RUN pip install --trusted-host pypi.python.org -r requirements.txt \
     && apk --purge del build-deps
