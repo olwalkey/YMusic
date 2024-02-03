@@ -7,7 +7,7 @@ password: default
 debug: False
 trace: False
 
-ratelimit: None
+ratelimit: 2000000 #KiloBytes
 
 db:
   host: localhost
