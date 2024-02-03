@@ -115,7 +115,12 @@ def read_current_user(username: Annotated[str, Depends(get_current_username)]):
     return {"username": username}
 
 @app.get('/download/{dltype}/{url}/')
-async def download_audio_route(username: Annotated[str, Depends(get_current_username)], dltype:int,  url: str):
+async def download_audio_route(username: Annotated[str, Depends(get_current_username)], dltype:str,  url: str):
+  if dltype not in ['audio', 'video']:
+    return {
+      'message': f'An Error Occured', 
+      'error': 'Incorrect DlType!'
+        }
   return await download.download(url=url, vidtype=dltype)
 
 @app.get('/ping')
