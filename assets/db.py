@@ -3,6 +3,7 @@ from urllib.parse import urlparse, parse_qs
 from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
 from typing import Any, TypedDict, cast
 from sqlalchemy.sql import func
+from typing import Optional
 from loguru import logger
 from config import config
   
@@ -15,7 +16,7 @@ class Playlist(Base):
   __tablename__ = 'playlists'
   id = Column(Integer, autoincrement=True, primary_key=True)
   title = Column(String, default=None)
-  vidtype = Column(Enum('video', 'audio', name='vidtype'), default='audio')
+  # vidtype = Column(Enum('video', 'audio', name='vidtype'), default='audio')
   url = Column(String, unique=True)
   queue_status = Column(Enum('queued', 'in_progress', 'completed', name='queue_status'), default='queued')
   create_time = Column(TIMESTAMP, default=func.now())
@@ -109,10 +110,12 @@ class Database:
           session.add(new_download)
           session.commit()
 
-    def new_queue(self, url, vidtype):
+    # def new_queue(self, url, vidtype: Optional[str]):
+    def new_queue(self, url):
       with self.session() as session:
         with session.begin():
-          new_queue = Playlist(title=None, vidtype=vidtype, url=url, queue_status='queued')
+          # new_queue = Playlist(title=None, vidtype=vidtype, url=url, queue_status='queued')
+          new_queue = Playlist(title=None, url=url, queue_status='queued')
           session.add(new_queue)
           session.commit()
 

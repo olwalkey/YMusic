@@ -80,7 +80,8 @@ class Download:
     try:
       
       logger.trace('new queue')
-      self.database.new_queue(url=url, vidtype=vidtype)
+      # self.database.new_queue(url=url, vidtype=vidtype)
+      self.database.new_queue(url=url)
       
       logger.trace('init queue instance')
       self.dlq.put(url)
