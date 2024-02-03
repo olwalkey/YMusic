@@ -1,11 +1,7 @@
-from typing import List, Optional
+from typing import Optional
 from pydantic import BaseModel, ValidationError
 import yaml, sys
 from loguru import logger
-from munch import munchify
-
-
-
 
 class DbConfig(BaseModel):
   host: str
@@ -17,7 +13,7 @@ class DbConfig(BaseModel):
 class AppConfig(BaseModel):
   host: str
   port: int
-  user: str
+  username: str
   password: str
   debug: bool
   trace: bool
