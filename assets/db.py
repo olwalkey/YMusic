@@ -72,10 +72,9 @@ class Database:
         )
 
     def QueueNotDone(self):
-        
       with self.session() as session:
         for item in session.execute(select(Playlist).filter(Playlist.queue_status == 'queued').order_by(Playlist.create_time.asc())).scalars().all():
-          logger.info(f'Retrieved URL from database: {item.url}, {item.vidtype}')
+          logger.info(f'Retrieved URL from database: {item.url}')
           yield item
 
     def mark_playlist_downloaded(self, qurl, title):
@@ -103,8 +102,8 @@ class Database:
           new_download = Downloaded(
             title=title,
             playlist_url=playlist_url,
-            url=url, 
-            path=download_path, 
+            url=url,
+            path=download_path,
             elapsed=elapsed,
             )
           session.add(new_download)

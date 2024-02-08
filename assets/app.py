@@ -145,5 +145,5 @@ if __name__ == '__main__':
   import uvicorn
   
   with ThreadPoolExecutor(max_workers=2) as executor:
-      future1 = executor.submit(run_asyncio)
-      future2 = executor.submit(run_uvicorn)
+    future1 = executor.submit(run_asyncio)
+    future2 = executor.submit(run_uvicorn)

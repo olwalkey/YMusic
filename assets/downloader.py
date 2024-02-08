@@ -130,7 +130,7 @@ class Downloader:
     download_path:Optional[str]='downloads/', 
     port:Optional[int]=5000,
   ):
-    self.db = db
+    self.db = Database()
     if not host == None:
       self.host = host
       self.port = port
@@ -148,6 +148,7 @@ class Downloader:
       self.filename = d['filename']   #type: ignore
       self.time_elapse = d['elapsed']   #type: ignore
       self.PostProcessorStarted=False   #type: ignore
+      
     if d.status == 'downloading':   #type: ignore
       if not self.StatusStarted:    #type: ignore
         logger.trace(f'Now Downloading "{d["tmpfilename"]}"')       #type: ignore
@@ -231,7 +232,7 @@ class Downloader:
     #     Queue.put(x)
     for x in self.db.QueueNotDone():
       logger.info(f'retrieved URL from database: {x.title}/{x.url}')
-      dlq.put({'url':x.url, 'vidtype':x.vidtype})
+      dlq.put(x.url)
     
     # Thread Main
     while 1:
