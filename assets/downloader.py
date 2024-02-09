@@ -247,7 +247,7 @@ class Downloader:
 
   async def download(self, next):
     logger.debug(f'self.urls: {self.urls}')
-    logger.debug(f'next: {next.url}/{next.vidtype}')
+    logger.debug(f'next: {next}')
     logger.trace('Start Download Function')
     
     self.executor.submit(self.download_thread, *[next])
