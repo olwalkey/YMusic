@@ -7,6 +7,7 @@ from pytube import Playlist
 import asyncio
 import sys
 from time import sleep
+from .config import config
 
 from queue import Empty, Queue
 try:
@@ -177,7 +178,7 @@ try:
 
     def ydl_opts(self):
       ydl_opts = {
-        # 'ratelimit': 500000, # Kilobytes
+        'ratelimit': config.ratelimit, # Kilobytes
         'logger': MyLogger(),
         'breakonexisting': True,
         'progress_hooks': [self.progress_hook],
@@ -224,12 +225,6 @@ try:
       logger.trace(f'Started: {self.Started}')
       logger.debug(qurls)
 
-      # On async startup:
-      # Connect to database
-      # find *all* waiting for download
-      # populate Queue
-      # for x in db_waiting:
-      #     Queue.put(x)
       for x in self.db.QueueNotDone():
         logger.info(f'retrieved URL from database: {x.title}/{x.url}')
         dlq.put(x.url)
