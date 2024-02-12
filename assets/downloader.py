@@ -7,7 +7,7 @@ from pytube import Playlist
 import asyncio
 import sys
 from time import sleep
-from .config import config
+from config import config
 
 from queue import Empty, Queue
 try:
@@ -250,22 +250,25 @@ try:
       
     def download_thread(self, url):
       """ url is the YT url for download """
-      logger.info(f'begin download for {url}')
-      logger.trace('Start for loop')
-      with yt_dlp.YoutubeDL(self.playlist_title()) as ydl:
-        result = ydl.extract_info(url, download=False)
-        if result is not None:
-          title_url = result['url']
-          playlist = Playlist(title_url)
-          logger.trace(f'Playlist: {playlist}')
-          self.PlaylistTitle = playlist.title
-        else:
-          logger.error(f"Couldn't extract info for URL: {url}")
-      with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
-        self.playlist_url=url
-        ydl.download(url)
-        self.db.mark_playlist_downloaded(url, self.PlaylistTitle)
-
+      try:
+        logger.info(f'begin download for {url}')
+        logger.trace('Start for loop')
+        with yt_dlp.YoutubeDL(self.playlist_title()) as ydl:
+          result = ydl.extract_info(url, download=False)
+          if result is not None:
+            title_url = result['url']
+            playlist = Playlist(title_url)
+            logger.trace(f'Playlist: {playlist}')
+            self.PlaylistTitle = playlist.title
+          else:
+            logger.error(f"Couldn't extract info for URL: {url}")
+        with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
+          self.playlist_url=url
+          ydl.download(url)
+          self.db.mark_playlist_downloaded(url, self.PlaylistTitle)
+      except Exception as e:
+        logger.error(e)
+        
 
     def getjson(self):
       data = {
