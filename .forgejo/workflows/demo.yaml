@@ -1,8 +1,14 @@
 on: push
 jobs:
-  ipv6:
+  ipv4:
     runs-on: docker
     steps:
       - run: |
           apt update; apt install --yes curl
           curl -s -o /dev/null http://ipv4.google.com
+  ipv6:
+    runs-on: docker
+    steps:
+      - run: |
+          apt update; apt install --yes curl
+          curl -s -o /dev/null http://ipv6.google.com
