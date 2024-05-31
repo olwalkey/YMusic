@@ -1,6 +1,11 @@
 on: [push]
 jobs:
-  test:
+  build-docker:
     runs-on: docker
     steps:
-      - run: echo All Good
+      - uses: actions/checkout@v4
+      - run: |
+          ls ${{ github.workspace }}
+
+
+
