@@ -1,38 +1,6 @@
-name: Docker Image CI
-
-on:
-  push:
-    branches: [ "master" ]
-
+on: [push]
 jobs:
-  push_to_registry:
-    name: Build and Push Docker image to Forgejo Docker Registry
-    runs-on: ubuntu-latest
+  test:
+    runs-on: docker
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Login to Forgejo Docker Registry
-        run: echo "${{ secrets.FORGEJO_DOCKER_PASSWORD }}" | docker login git.zima.ashbyte.com -u "${{ secrets.FORGEJO_DOCKER_USERNAME }}" --password-stdin
-
-      - name: Get version from file
-        id: get_version
-        run: echo "VERSION=$(cat version)" >> $GITHUB_ENV
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        run: |
-          TAGS=$(docker run --rm ghcr.io/tektoncd/chains:latest -c . --json | jq -r .tags)
-          LABELS=$(docker run --rm ghcr.io/tektoncd/chains:latest -c . --json | jq -r .labels)
-          echo "TAGS=$TAGS" >> $GITHUB_ENV
-          echo "LABELS=$LABELS" >> $GITHUB_ENV
-
-      - name: Create latest tag
-        id: create_latest_tag
-        run: echo "LATEST=latest" >> $GITHUB_ENV
-      
-      - name: Build and push Docker image
-        run: |
-          docker build -t git.zima.ashbyte.com/naterfute/youtube-downloader:${{ env.VERSION }} -t git.zima.ashbyte.com/naterfute/youtube-downloader:latest .
-          docker push git.zima.ashbyte.com/naterfute/youtube-downloader:${{ env.VERSION }}
-          docker push git.zima.ashbyte.com/naterfute/youtube-downloader:latest
+      - run: echo All Good
