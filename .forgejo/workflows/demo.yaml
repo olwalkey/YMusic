@@ -1,8 +1,8 @@
-on: [push]
+on: push
 jobs:
-  ls:
+  ipv6:
     runs-on: docker
     steps:
-      - uses: actions/checkout@v3
       - run: |
-          ls ${{ github.workspace }}   
+          apt update; apt install --yes curl
+          curl -s -o /dev/null http://ipv4.google.com
