@@ -83,9 +83,16 @@ class config:
         self.verify_conf()
         return self.config
 
-    def update(self):
+    def update(self, key, value):
         """Opens config file in write mode to edit config"""
-        pass
+        self.get()
+        localconf=self.conf
+        localconf[key] = value
+        self.conf = localconf
+        self.verify_conf()
+        with open(confpath, 'w+') as f:
+            f.write(yaml.dump(self.conf))
+
     def make_table(self, data):
         table = Table(title="Download Info")
         table.add_column("Key", justify="right", style="cyan", no_wrap=True)
@@ -127,10 +134,9 @@ def follow():
                 else:
                     console.log("[red]Failed to fetch data from the API[/red]")
                 sleep(1)
-
-
     else:
         pass
+
 @app.command()
 def getconf():
     Cclass=config()
@@ -141,15 +147,18 @@ def editconf(
     host: Optional[str] = Option(None, '-h', '--host', help='change host ex; youtube.downloader.com'),
     port: Optional[int] = Option(None, '-p', '--port', help='Change port ex; 5000'),
     protocol: Optional[str] = Option(None, '-pr', '--protocol', help='change protocol ex; http'),
-
+    username: Optional[str] = Option(None, '-u', '--username', help='change username ex; MyUsername'),
+    password: Optional[str] = Option(None, '-pa', '--password', help='change password ex; SuperSecretPassword'),
+    
     ):
     Cclass=config()
-    if host:
-        print(host)
-    if port:
-        print(port)
-    if protocol:
-        print(protocol)
+    mydict={'host': host, 'port': port, 'protocol': protocol, 'username': username, 'password': password}
+    for x, y in mydict.items():
+        if y:
+            Cclass.update(x, y)
+        else:
+            pass
+
 @app.command()
 def download(
     trace: Optional[bool] = Option(False, '-t', '--trace', is_flag=True, help='Enable trace-level debugging.'),
