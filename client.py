@@ -100,7 +100,7 @@ class config:
 
     def fetch_data(self, apiurl):
         self.get()
-        r = requests.get(f'{apiurl}/getjson', auth=(self.munchconf.username, self.munchconf.password))
+        r = requests.get(f'{apiurl}/getjson', auth=(self.munchconf.username, self.munchconf.password)) #type: ignore
         if r.status_code == 200:
             return r
         else:
@@ -120,7 +120,7 @@ def follow():
         with Live(console=console, refresh_per_second=1) as live:
             while True:
                 data = Cclass.fetch_data(apiurl)
-                data = data.json()
+                data = data.json() #type: ignore
                 if data:
                     table = Cclass.make_table(data)
                     live.update(table)
