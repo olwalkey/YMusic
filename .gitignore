@@ -15,3 +15,4 @@ make_release.sh
 dev
 page_boy
 requirements_new.txt
+.client/
