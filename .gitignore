@@ -15,3 +15,7 @@ make_release.sh
 dev
 page_boy
 requirements_new.txt
+.client/
+.server/
+.yt-dlfConfig.yaml
+docker-compose.yml
