@@ -12,13 +12,12 @@ import requests
 import yaml
 from sys import stderr
 from time import sleep
-
+from json import loads
 debug = False
 trace = False
 confpath='.yt-dlfConfig.yaml'
 
 obj = munchify({})
-
 
 def debug_init(trace, debug):
     logger.remove()
@@ -65,10 +64,44 @@ class config:
         trace: bool = False
 
     def __init__(self):
-        pass
+        self.check_exist()
+
+    def check_exist(self):
+        import os.path
+        if not os.path.isfile(confpath):
+            logger.error('Config file not found!')
+            logger.info('Generating new config')
+            logger.warning('this will overwrite your current config if one exists!')
+            genconf=input('Would you like to Generate a config? y/n  ')
+            if genconf.lower() == 'y':
+                localconf=self.AppConfig(host='None', port=0, protocol='None', username='None', password='None')
+                jsondata=loads(localconf.model_dump_json())
+                newconf={}
+                for field in jsondata:
+                    while True:
+                        try:
+                            if field == 'debug' or field == 'trace':
+                                break
+                            raw_input = input(f'{field}: ')
+                            if field == "port":
+                                raw_input = int(raw_input)
+                            newconf[field] = raw_input
+                            break
+                        except ValueError:
+                            print('Invalid value!')
+                newconf['debug'] = False
+                newconf['trace'] = False
+                self.conf=newconf
+                config=self.verify_conf()
+                myconf=yaml.dump(self.conf, default_flow_style=False)
+
+                with open(confpath, 'w+') as f:
+                    logger.trace('writing new conf')
+                    f.write(myconf)
 
     def verify_conf(self):
         try:
+            logger.trace('verifying conf integrity')
             self.config=self.AppConfig(**self.conf)
             return self.config
         except ValidationError as e:
@@ -115,6 +148,7 @@ class config:
 
 @app.command()
 def follow():
+    logger.info('started')
     Cclass= config()
     console = Console()
     conf = Cclass.get()
@@ -135,7 +169,7 @@ def follow():
                     console.log("[red]Failed to fetch data from the API[/red]")
                 sleep(1)
     else:
-        pass
+        logger.error(r.status_code)
 
 @app.command()
 def getconf():
