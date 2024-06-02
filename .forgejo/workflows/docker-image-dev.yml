@@ -2,7 +2,7 @@ name: Docker Image CI
 
 on:
  push:
-    branches: [ "master" ]
+    branches: [ "dev" ]
 
 jobs:
  push_to_registry:
@@ -34,5 +34,6 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: git.zima.ashbyte.com/naterfute/yt-dlf:${{ env.VERSION }},naterfute/yt-dlf:latest
+          tags: git.zima.ashbyte.com/naterfute/yt-dlf:${{ env.VERSION }},naterfute/yt-dlf:nightly
           labels: ${{ env.LABELS }}
+
