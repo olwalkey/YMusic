@@ -1,0 +1,5 @@
+host: test.zima
+password: word
+port: 5000
+protocol: http
+username: pass

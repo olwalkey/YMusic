@@ -148,7 +148,6 @@ class config:
 
 @app.command()
 def follow():
-    logger.info('started')
     Cclass= config()
     console = Console()
     conf = Cclass.get()
@@ -170,6 +169,10 @@ def follow():
                 sleep(1)
     else:
         logger.error(r.status_code)
+        if r.status_code == 401:
+            logger.error('Unauthenticated! Check username and password')
+        elif r.status_code == 400:
+            logger.error('Failed to communicate with server')
 
 @app.command()
 def getconf():
