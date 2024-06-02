@@ -2,17 +2,20 @@ from typer import Typer, Option, Argument
 from requests.exceptions import RequestException
 from urllib.parse import urlparse, parse_qs
 from pydantic import BaseModel, ValidationError
+from rich.console import Console
+from rich.table import Table
+from rich.live import Live
 from typing import Optional
 from munch import munchify
 from loguru import logger
 import requests
 import yaml
 from sys import stderr
-
+from time import sleep
 
 debug = False
 trace = False
-
+confpath='.yt-dlfConfig.yaml'
 
 obj = munchify({})
 
@@ -50,22 +53,11 @@ def spliturl(urls):
 
 app = Typer(no_args_is_help=True, add_completion=False)
 
-with open('config.yaml') as stream:
-    try:
-        yamlfile = yaml.safe_load(stream)
-        if yamlfile is not None:
-          loadedyaml = munchify(yamlfile)
-        else:
-          raise FileNotFoundError('File Either does not exist, or it is formatted incorrectly')
-    except yaml.YAMLError as exc:
-        print(exc)
-        raise ValueError('Config failed to load Properly!')
-
-
 
 class config:
     class AppConfig(BaseModel):
         host: str
+        protocol: str
         port: int
         username: str
         password: str
@@ -79,23 +71,85 @@ class config:
         try:
             self.config=self.AppConfig(**self.conf)
             return self.config
-        except ValidationError:
+        except ValidationError as e:
             logger.error('Conf configured incorrectly')
+            logger.error(e)
+            exit()
 
     def get(self):
-        with open('.yt-dlfConfig.yaml', 'r+') as config:
+        with open(confpath, 'r+') as config:
             self.conf= yaml.safe_load(stream=config)
+            self.munchconf = munchify(self.conf)
         self.verify_conf()
-        print(self.config.port)
         return self.config
 
+    def update(self):
+        """Opens config file in write mode to edit config"""
+        pass
+    def make_table(self, data):
+        table = Table(title="Download Info")
+        table.add_column("Key", justify="right", style="cyan", no_wrap=True)
+        table.add_column("Value", style="magenta")
 
+        if data:
+            for key, value in data["info"].items():
+                table.add_row(key, str(value))
+
+        return table
+
+
+    def fetch_data(self, apiurl):
+        self.get()
+        r = requests.get(f'{apiurl}/getjson', auth=(self.munchconf.username, self.munchconf.password))
+        if r.status_code == 200:
+            return r
+        else:
+            return None
+
+@app.command()
+def follow():
+    Cclass= config()
+    console = Console()
+    conf = Cclass.get()
+    if not conf.port == '80' or conf.port == '443':
+        apiurl=f'{conf.protocol}://{conf.host}:{conf.port}'   
+    else:
+        apiurl=f'{conf.protocol}://{conf.host}'
+    r = requests.get(f'{apiurl}/getjson', auth=(conf.username, conf.password))
+    if r.status_code == 200:
+        with Live(console=console, refresh_per_second=1) as live:
+            while True:
+                data = Cclass.fetch_data(apiurl)
+                data = data.json()
+                if data:
+                    table = Cclass.make_table(data)
+                    live.update(table)
+                else:
+                    console.log("[red]Failed to fetch data from the API[/red]")
+                sleep(1)
+
+
+    else:
+        pass
 @app.command()
 def getconf():
     Cclass=config()
     print(Cclass.get())
 
+@app.command()
+def editconf(
+    host: Optional[str] = Option(None, '-h', '--host', help='change host ex; youtube.downloader.com'),
+    port: Optional[int] = Option(None, '-p', '--port', help='Change port ex; 5000'),
+    protocol: Optional[str] = Option(None, '-pr', '--protocol', help='change protocol ex; http'),
 
+    ):
+    Cclass=config()
+    if host:
+        print(host)
+    if port:
+        print(port)
+    if protocol:
+        print(protocol)
 @app.command()
 def download(
     trace: Optional[bool] = Option(False, '-t', '--trace', is_flag=True, help='Enable trace-level debugging.'),
@@ -106,37 +160,44 @@ def download(
     
 ):
     debug_init(trace, debug)
+    Cclass=config()
+    conf=Cclass.get()
     if video:
       audio=False
     if audio:
       dltype = 'audio'
     else: 
       dltype = 'video'
-      print('Video Downloading is not yet supported, consider making a pull request to change this!')
-      
+      logger.error('Video Downloading is not yet supported, consider making a pull request to change this!')
+      exit()
+    if not conf.port == '80' or conf.port == '443':
+        apiurl=f'{conf.protocol}://{conf.host}:{conf.port}'   
+    else:
+        apiurl=f'{conf.protocol}://{conf.host}'   
     try:
-      r = requests.get(f'http://{config.host}:{config.port}/ping')
+      r = requests.get(f'{apiurl}/ping')
       r = munchify(r.json())
       logger.info(f'Pinging server: {r.ping}') #type: ignore
       logger.debug(r)
     except RequestException as e:
       logger.warning('Failed to connect to webserver run in debug to see more info')
       logger.info("Try making sure the webserver is up and your calling the right host and port!")
-      logger.info(f"current host:{config.host} port:{config.port}")
+      logger.info(f"current host:{conf.host} port:{conf.port}")
+      logger.info(f'api path: {apiurl}')
       logger.debug(e)
-      sys.exit()
+      exit()
         
     url = spliturl(urls)
     if url == []:
       logger.error('Url Is empty! exiting')
-      sys.exit()
+      exit()
     else:
       pass
     
     logger.trace(f'Full Urls: {urls}')
     for x in url:
-        logger.debug(f'http://{config.host}:{config.port}/download/{dltype}/{x[0]}')
-        response = requests.get(f'http://{config.host}:{config.port}/download/{dltype}/{x[0]}', auth=(config.username, config.password))
+        logger.debug(f'{apiurl}/download/{dltype}/{x[0]}')
+        response = requests.get(f'{apiurl}/download/{dltype}/{x[0]}', auth=(conf.username, conf.password))
         if response.status_code == 200:
             logger.info(response.json())
         else:
