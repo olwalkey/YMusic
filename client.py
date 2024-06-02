@@ -13,9 +13,14 @@ import yaml
 from sys import stderr
 from time import sleep
 from json import loads
+from pathlib import Path
+from os import path
+
 debug = False
 trace = False
-confpath='.yt-dlfConfig.yaml'
+
+pwd=Path(__file__).parent.resolve()
+confpath = path.join(pwd, '.yt-dlfConfig.yaml')
 
 obj = munchify({})
 
