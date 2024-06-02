@@ -1,11 +1,11 @@
 name: Docker Image CI
 
 on:
- push:
+  push:
     branches: [ "dev" ]
 
 jobs:
- push_to_registry:
+  push_to_registry:
     name: Build and Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     steps:
@@ -16,7 +16,7 @@ jobs:
 
       - name: Get version from file
         id: get_version
-        run: echo VERSION=$(cat version) >> $GITHUB_ENV
+        run: echo "VERSION=$(cat version)" >> $GITHUB_ENV
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -24,9 +24,9 @@ jobs:
         with:
           images: naterfute/yt-dlf
 
-      - name: Create latest tag
-        id: create_latest_tag
-        run: echo LATEST=latest >> $GITHUB_ENV
+      - name: Create nightly tag
+        id: create_nightly_tag
+        run: echo "NIGHTLY_TAG=nightly" >> $GITHUB_ENV
       
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
@@ -34,6 +34,8 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: git.zima.ashbyte.com/naterfute/yt-dlf:${{ env.VERSION }},naterfute/yt-dlf:nightly
-          labels: ${{ env.LABELS }}
+          tags: |
+            git.zima.ashbyte.com/naterfute/yt-dlf:${{ env.VERSION }}
+            git.zima.ashbyte.com/naterfute/yt-dlf:${{ env.NIGHTLY_TAG }}
+          labels: ${{ steps.meta.outputs.labels }}
 
