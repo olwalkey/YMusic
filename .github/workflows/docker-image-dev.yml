@@ -35,7 +35,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:${{ env.VERSION }}
-            ghcr.io/${{ github.repository }}:${{ env.NIGHTLY_TAG }}
+            ghcr.io/kalebschmidlkofer/yt-dlf:${{ env.VERSION }}
+            ghcr.io/kalebschmidlkofer/yt-dlf:${{ env.NIGHTLY_TAG }}
           labels: ${{ steps.meta.outputs.labels }}
 
