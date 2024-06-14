@@ -16,9 +16,8 @@ class Playlist(Base):
   __tablename__ = 'playlists'
   id = Column(Integer, autoincrement=True, primary_key=True)
   title = Column(String, default=None)
-  # vidtype = Column(Enum('video', 'audio', name='vidtype'), default='audio')
   url = Column(String, unique=True)
-  queue_status = Column(Enum('queued', 'in_progress', 'completed', name='queue_status'), default='queued')
+  queue_status = Column(Enum('queued', 'completed', name='queue_status'), default='queued')
   create_time = Column(TIMESTAMP, default=func.now())
   downloaded_time = Column(TIMESTAMP, default=None)
   downloaded_items = relationship('Downloaded', back_populates='playlist')
@@ -34,8 +33,15 @@ class Downloaded(Base):
   create_time = Column(TIMESTAMP, default=func.now())
   playlist = relationship('Playlist', back_populates='downloaded_items')
 
+class Users(Base):
+  __tablename__ = "users"
+  id = Column(Integer, autoincrement=True, primary_key=True)
+  Username = Column(String, default=None, unique=True)
+  password = Column(String(50))
+
+
 def spliturl(url: list):
-  """Splits urls the exact same way as the main.py script for consistant url grabbing
+  """Splits url and returns the youtube video/playlist id
 
   Args:
       url (string): Youtube url Eg: https://www.youtube.com/watch?v=sVJEaYNOUNw&t=162s
@@ -64,7 +70,7 @@ class Database:
         self.engine = create_engine(
             f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}",
             echo=False,
-            connect_args={"options": "-c timezone=utc"}
+            connect_args={"options": "-c timezone=America/Los_Angeles"}
         )
 
         self.session = sessionmaker(
@@ -77,12 +83,12 @@ class Database:
           logger.info(f'Retrieved URL from database: {item.url}')
           yield item
 
-    def mark_playlist_downloaded(self, qurl, title):
+    def mark_playlist_downloaded(self, url, title):
       try:
-        logger.debug(qurl)
+        logger.debug(url)
         stmt = (
             update(Playlist)
-            .where(Playlist.url == qurl)
+            .where(Playlist.url == url)
             .values(
               title=title,
               queue_status='completed',
@@ -92,7 +98,7 @@ class Database:
         with self.session() as session:
           with session.begin():
             session.execute(stmt)
-            logger.info(f'Marked playlist "{qurl}" as downloaded')
+            logger.info(f'Marked playlist "{url}" as downloaded')
       except Exception as e:
         logger.error(e)
         
@@ -119,12 +125,12 @@ class Database:
           session.commit()
 
     def db_create(self):
-      with self.engine.begin() as conn: #type: ignore
+      with self.engine.begin() as conn: 
         Base.metadata.create_all(conn)
 
     def reconnect(self):
       self.session.close_all()
-      self.connect(config.db.host, config.db.port, config.db.user, config.db.password, config.db.db) #type: ignore
+      self.connect(config.db.host, config.db.port, config.db.user, config.db.password, config.db.db) 
 
     def __enter__(self):
       return self

@@ -33,8 +33,10 @@ try:
         from .db import Database
         db = Database()
       except:
+        logger.error('Failed to import db')
         exit()
   else:
+    logger.warning("Didn't try to import db")
     pass
 
 
@@ -43,7 +45,7 @@ try:
           # For compatibility with youtube-dl, both debug and info are passed into debug
           # You can distinguish them by the prefix '[debug] '
           if msg.startswith('[debug] '):
-              pass
+              logger.debug(msg)
           else:
               self.info(msg)
 
@@ -56,47 +58,6 @@ try:
       def error(self, msg):
         print(msg)
         pass
-
-
-  class queue:
-    started=False
-
-    def __init__(self):
-      self.db = db
-      
-    def fill(self):
-      """returns all non downloaded items in the database
-
-      Returns:
-          dict: id: url
-      """
-      self.myqueue = self.db.QueueNotDone()
-      return self.myqueue
-
-  def format_selector(ctx):
-      """ Select the best video and the best audio that won't result in an mkv.
-      NOTE: This is just an example and does not handle all cases """
-
-      formats = ctx.get('formats')[::-1]
-
-      # acodec='none' means there is no audio
-      best_video = next(f for f in formats
-                        if f['vcodec'] != 'none' and f['acodec'] == 'none')
-
-      # find compatible audio extension
-      audio_ext = {'mp4': 'm4a', 'webm': 'webm'}[best_video['ext']]
-      # vcodec='none' means there is no video
-      best_audio = next(f for f in formats if (
-          f['acodec'] != 'none' and f['vcodec'] == 'none' and f['ext'] == audio_ext))
-
-      # These are the minimum required fields for a merged format
-      yield {
-          'format_id': f'{best_video["format_id"]}+{best_audio["format_id"]}',
-          'ext': best_video['ext'],
-          'requested_formats': [best_video, best_audio],
-          # Must be + separated list of protocols
-          'protocol': f'{best_video["protocol"]}+{best_audio["protocol"]}'
-      }
 
   class Downloader:
     debug_init(True, False)
@@ -118,7 +79,6 @@ try:
     PlaylistTitle=None
     downloading=False
 
-    urls=[]
 
     
     loop = asyncio.get_event_loop()
@@ -152,12 +112,13 @@ try:
         
       if d.status == 'downloading':
         if not self.StatusStarted:
-          logger.trace(f'Now Downloading "{d["tmpfilename"]}"')
+          logger.trace(f'Now Downloading "{d["filename"]}"')
           self.StatusStarted = True
 
-        self.filename = d['tmpfilename']
+        self.filename = d['filename']
         self.percent = d['_percent_str']
         self.eta = d['_eta_str']
+        self.speed = d['speed']
 
     def postprocessor_hooks(self, d):
       
@@ -196,58 +157,15 @@ try:
         {'already_have_thumbnail': False, 'key': 'EmbedThumbnail'}
       ]}
       return ydl_opts
-    
-    def video_opts(self):
-      ydl_opts = {
-        # 'ratelimit': 500000, # Kilobytes
-        'logger': MyLogger(),
-        'breakonexisting': True,
-        'progress_hooks': [self.progress_hook],
-        'postprocessor_hooks': [self.postprocessor_hooks],
-        'writethumbnail': True,
-        'outtmpl': 'videos/%(playlist_title)s/%(playlist_autonumber)s - %(title)s.%(ext)s',
-        'skip_broken': True,
-        'ignoreerrors': True,
-        'format': format_selector,
-        'postprocessors': [
-        {'add_metadata': 'True', 'key': 'FFmpegMetadata'},
-        {'already_have_thumbnail': False, 'key': 'EmbedThumbnail'}
-      ]}
-      return ydl_opts
 
-    def playlist_title(self):
+    def playlist_title_opts(self):
       ydl_opts = {
         'quiet': True,
         'extract_flat': True
       }
       return ydl_opts
     
-    async def queue_dl(self, dlq: Queue, Shutdown = False, qurls: Optional[list] = None):
-      logger.trace(f'Started: {self.Started}')
-      logger.debug(qurls)
 
-      for x in self.db.QueueNotDone():
-        logger.info(f'retrieved URL from database: {x.title}/{x.url}')
-        dlq.put(x.url)
-      
-      # Thread Main
-      while 1:
-        if Shutdown:
-          return
-        try:
-          next = dlq.get(block = True, timeout=1)
-        except Empty:
-          logger.trace('downloader: queue empty')
-          continue
-        await self.download(next)
-
-    async def download(self, next):
-      logger.debug(f'self.urls: {self.urls}')
-      logger.debug(f'next: {next}')
-      logger.trace('Start Download Function')
-      
-      self.executor.submit(self.download_thread, *[next])
-      
     def download_thread(self, url):
       """ url is the YT url for download """
       try:
@@ -281,5 +199,7 @@ try:
         },
       }
       return data
+
+
 except Exception as e:
   logger.error(e)
