@@ -61,13 +61,12 @@ app = Typer(no_args_is_help=True, add_completion=False)
 class config:
     class AppConfig(BaseModel):
         host: str
-        protocol: str
         port: int
         username: str
         password: str
         debug: bool = False
         trace: bool = False
-
+        ssl: bool
     def __init__(self):
         self.check_exist()
 
@@ -79,7 +78,7 @@ class config:
             logger.warning('this will overwrite your current config if one exists!')
             genconf=input('Would you like to Generate a config? y/n  ')
             if genconf.lower() == 'y':
-                localconf=self.AppConfig(host='None', port=0, protocol='None', username='None', password='None')
+                localconf=self.AppConfig(host='None', port=0, username='None', password='None', ssl=False)
                 jsondata=loads(localconf.model_dump_json())
                 newconf={}
                 for field in jsondata:
@@ -221,10 +220,10 @@ def download(
       dltype = 'video'
       logger.error('Video Downloading is not yet supported, consider making a pull request to change this!')
       exit()
-    if not conf.port == '80' or conf.port == '443':
-        apiurl=f'{conf.protocol}://{conf.host}:{conf.port}'   
+    if conf.ssl is True:
+        apiurl=f'https://{conf.host}:{conf.port}'
     else:
-        apiurl=f'{conf.protocol}://{conf.host}'   
+        apiurl=f'http://{conf.host}:{conf.port}'
     try:
       r = requests.get(f'{apiurl}/ping')
       r = munchify(r.json())
@@ -249,12 +248,14 @@ def download(
     for x in url:
         logger.debug(f'{apiurl}/download/{dltype}/{x[0]}')
         response = requests.get(f'{apiurl}/download/{dltype}/{x[0]}', auth=(conf.username, conf.password))
+        logger.trace(conf.username)
+        logger.trace(conf.password)
         if response.status_code == 200:
             logger.info(response.json())
         else:
-            print(f'Failure: {response.status_code}')
+            logger.error(f'Failure: {response.status_code} {response.json()['detail']}')
+            #logger.error(response.json()['detail'])
         pass
-
 
 if __name__ == "__main__":
     app()
