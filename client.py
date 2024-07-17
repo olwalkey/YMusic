@@ -15,9 +15,10 @@ from time import sleep
 from json import loads
 from pathlib import Path
 from os import path
+from pprint import pprint
 
-debug = False
-trace = False
+debug = True
+trace = True
 
 pwd=Path(__file__).parent.resolve()
 confpath = path.join(pwd, '.yt-dlfConfig.yaml')
@@ -151,14 +152,23 @@ class config:
             return None
 
 @app.command()
-def follow():
+def follow(
+    trace: Optional[bool] = Option(False, '-t', '--trace', is_flag=True, help='Enable trace-level debugging.'),
+    debug: Optional[bool] = Option(False, '-d', '--debug', is_flag=True, help='Enable debug-level debugging'),
+    ):
+
     Cclass= config()
     console = Console()
     conf = Cclass.get()
-    if not conf.port == '80' or conf.port == '443':
-        apiurl=f'{conf.protocol}://{conf.host}:{conf.port}'   
+    debug_init(trace, debug)
+
+    if conf.ssl is True:
+        logger.trace('using ssl')
+        apiurl=f'https://{conf.host}:{conf.port}'
     else:
-        apiurl=f'{conf.protocol}://{conf.host}'
+        logger.trace('not using ssl')
+        apiurl=f'http://{conf.host}:{conf.port}'
+    logger.trace(apiurl) 
     r = requests.get(f'{apiurl}/getjson', auth=(conf.username, conf.password))
     if r.status_code == 200:
         with Live(console=console, refresh_per_second=1) as live:
@@ -174,14 +184,14 @@ def follow():
     else:
         logger.error(r.status_code)
         if r.status_code == 401:
-            logger.error('Unauthenticated! Check username and password')
+            logger.error(f'Failure: {r.status_code} {r.json()['detail']}')
         elif r.status_code == 400:
-            logger.error('Failed to communicate with server')
+            logger.error(f'Failure: {r.status_code} {r.json()['detail']}')
 
 @app.command()
 def getconf():
     Cclass=config()
-    print(Cclass.get())
+    pprint(Cclass.get())
 
 @app.command()
 def editconf(
@@ -247,9 +257,10 @@ def download(
     logger.trace(f'Full Urls: {urls}')
     for x in url:
         logger.debug(f'{apiurl}/download/{dltype}/{x[0]}')
-        response = requests.get(f'{apiurl}/download/{dltype}/{x[0]}', auth=(conf.username, conf.password))
+        logger.debug(conf)
         logger.trace(conf.username)
         logger.trace(conf.password)
+        response = requests.get(f'{apiurl}/download/{dltype}/{x[0]}', auth=(conf.username, conf.password))
         if response.status_code == 200:
             logger.info(response.json())
         else:
