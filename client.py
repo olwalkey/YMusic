@@ -119,6 +119,7 @@ class config:
             self.conf= yaml.safe_load(stream=config)
             self.munchconf = munchify(self.conf)
         self.verify_conf()
+        self.config.username = self.config.username.lower()
         return self.config
 
     def update(self, key, value):
