@@ -9,6 +9,7 @@ jobs:
     name: Build and Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     steps:
+<<<<<<< HEAD
       - uses: actions/checkout@v4
 
 <<<<<<< HEAD:.github/workflows/docker-image-dev.yml
@@ -18,6 +19,12 @@ jobs:
       - name: Login to DockerHub Registry
         run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin ${{ secrets.DOCKER_REGISTRY }}
 >>>>>>> parent of a515d23 (update: moved .forgejo to .github for workflows):.forgejo/workflows/docker-image-dev.yml
+=======
+      - uses: actions/checkout@v2
+
+      - name: Login to DockerHub Registry
+        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin ${{ secrets.DOCKER_REGISTRY }}
+>>>>>>> parent of 45db50f (update: moved .forgejo to .github for workflows)
 
       - name: Get version from file
         id: get_version
@@ -25,7 +32,11 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
+<<<<<<< HEAD
         uses: docker/metadata-action@v4
+=======
+        uses: docker/metadata-action@v3
+>>>>>>> parent of 45db50f (update: moved .forgejo to .github for workflows)
         with:
           images: naterfute/yt-dlf
 
@@ -34,12 +45,17 @@ jobs:
         run: echo "NIGHTLY_TAG=nightly" >> $GITHUB_ENV
       
       - name: Build and push Docker image
+<<<<<<< HEAD
         uses: docker/build-push-action@v4
+=======
+        uses: docker/build-push-action@v2
+>>>>>>> parent of 45db50f (update: moved .forgejo to .github for workflows)
         with:
           context: .
           file: ./Dockerfile
           push: true
           tags: |
+<<<<<<< HEAD
 <<<<<<< HEAD:.github/workflows/docker-image-dev.yml
             ghcr.io/kalebschmidlkofer/yt-dlf:${{ env.VERSION }}
             ghcr.io/kalebschmidlkofer/yt-dlf:${{ env.NIGHTLY_TAG }}
@@ -47,5 +63,9 @@ jobs:
             git.zima.ashbyte.com/naterfute/yt-dlf:${{ env.VERSION }}
             git.zima.ashbyte.com/naterfute/yt-dlf:${{ env.NIGHTLY_TAG }}
 >>>>>>> parent of a515d23 (update: moved .forgejo to .github for workflows):.forgejo/workflows/docker-image-dev.yml
+=======
+            git.zima.ashbyte.com/naterfute/yt-dlf:${{ env.VERSION }}
+            git.zima.ashbyte.com/naterfute/yt-dlf:${{ env.NIGHTLY_TAG }}
+>>>>>>> parent of 45db50f (update: moved .forgejo to .github for workflows)
           labels: ${{ steps.meta.outputs.labels }}
 

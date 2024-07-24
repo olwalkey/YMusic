@@ -11,6 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+<<<<<<< HEAD
 <<<<<<< HEAD:.github/workflows/docker-image.yml
       - name: Login to GitHub Container Registry
         run: echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -18,6 +19,10 @@ jobs:
       - name: Login to DockerHub Registry
         run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin ${{ secrets.DOCKER_REGISTRY }}
 >>>>>>> parent of a515d23 (update: moved .forgejo to .github for workflows):.forgejo/workflows/docker-image.yml
+=======
+      - name: Login to DockerHub Registry
+        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin ${{ secrets.DOCKER_REGISTRY }}
+>>>>>>> parent of 45db50f (update: moved .forgejo to .github for workflows)
 
       - name: Get version from file
         id: get_version
