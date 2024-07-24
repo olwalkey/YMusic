@@ -1,0 +1,14 @@
+name: Test Docker Command
+
+on: [push]
+
+jobs:
+  test-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Docker version
+        run: docker --version
