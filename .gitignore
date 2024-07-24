@@ -19,3 +19,5 @@ requirements_new.txt
 .server/
 .yt-dlfConfig.yaml
 docker-compose.yml
+assets/config.yaml
+server.py
