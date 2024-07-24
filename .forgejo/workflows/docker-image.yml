@@ -1,18 +1,23 @@
 name: Docker Image CI
 
 on:
-  push:
+ push:
     branches: [ "master" ]
 
 jobs:
-  push_to_registry:
-    name: Build and Push Docker image to GitHub Container Registry
+ push_to_registry:
+    name: Build and Push Docker image to Docker Hub
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
+<<<<<<< HEAD:.github/workflows/docker-image.yml
       - name: Login to GitHub Container Registry
         run: echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+=======
+      - name: Login to DockerHub Registry
+        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin ${{ secrets.DOCKER_REGISTRY }}
+>>>>>>> parent of a515d23 (update: moved .forgejo to .github for workflows):.forgejo/workflows/docker-image.yml
 
       - name: Get version from file
         id: get_version
@@ -22,7 +27,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: naterfute/yt-dlf
 
       - name: Create latest tag
         id: create_latest_tag
@@ -34,8 +39,5 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:${{ env.VERSION }}
-            ghcr.io/${{ github.repository }}:${{ env.LATEST }}
-          labels: ${{ steps.meta.outputs.labels }}
-
+          tags: git.zima.ashbyte.com/naterfute/yt-dlf:${{ env.VERSION }},naterfute/yt-dlf:latest
+          labels: ${{ env.LABELS }}
