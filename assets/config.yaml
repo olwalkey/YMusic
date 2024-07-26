@@ -1,0 +1,18 @@
+host: localhost
+port: 5000
+
+username: default
+password: default
+
+debug: True
+trace: True
+
+ratelimit: 2000000 #KiloBytes
+
+db:
+  host: localhost
+  port: 5432
+  db: youtube
+  user: postgres
+  password: Testpass
+  

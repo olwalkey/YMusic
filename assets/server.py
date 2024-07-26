@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from time import sleep
 from munch import unmunchify
 from downloader import Downloader, queue
+from apscheduler.executors.asyncio import run_job, run_coroutine_job
 
 shared_data = {
   'info': {
@@ -20,8 +21,11 @@ shared_data = {
 
 executor = ThreadPoolExecutor(max_workers=1)
 
+
 def scanDatabase():
-    pass
+  """Scans Database For new entries"""
+  pass
+
 
 async def run_blocking_function(func):
     loop = asyncio.get_event_loop()
@@ -33,6 +37,7 @@ async def scanDatabase_async():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Runs Predetermined tasks beforehand to ensure all data is ready for FastAPI"""
     asyncio.create_task(scanDatabase_async())
     yield
     print('Shutting down...')
@@ -45,18 +50,14 @@ youtube=Downloader()
 #! Make use authentication
 @app.get('/download/{dltype}/{url}/')
 async def download_route(dltype:str,  url: str):
-  if dltype not in ['audio', 'video']:
-    return {
-      'message': f'An Error Occured', 
-      'error': 'Incorrect DlType!'
-        }
-  return await download.download(url=url, vidtype=dltype)
+  pass
+
 
 @app.get('/ping')
 async def ping():
   return {'ping': 'pong'}
 
-#! Make use authentication
+
 @app.get('/getjson')
 async def get_json():
   data = youtube.getjson()

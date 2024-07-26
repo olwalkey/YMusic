@@ -10,34 +10,33 @@ from config import config
 Base = declarative_base()
 
 
+class Tables():
+  class Playlist(Base):
+    __tablename__ = 'playlists'
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    title = Column(String, default=None)
+    url = Column(String, unique=True)
+    queue_status = Column(Enum('queued', 'completed', name='queue_status'), default='queued')
+    create_time = Column(TIMESTAMP, default=func.now())
+    downloaded_time = Column(TIMESTAMP, default=None)
+    downloaded_items = relationship('Downloaded', back_populates='playlist')
 
+  class Downloaded(Base):
+    __tablename__ = 'downloaded'
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    title = Column(String)
+    playlist_url = Column(String, ForeignKey('playlists.url'))
+    url = Column(String)
+    path = Column(String)
+    elapsed = Column(String)
+    create_time = Column(TIMESTAMP, default=func.now())
+    playlist = relationship('Playlist', back_populates='downloaded_items')
 
-class Playlist(Base):
-  __tablename__ = 'playlists'
-  id = Column(Integer, autoincrement=True, primary_key=True)
-  title = Column(String, default=None)
-  url = Column(String, unique=True)
-  queue_status = Column(Enum('queued', 'completed', name='queue_status'), default='queued')
-  create_time = Column(TIMESTAMP, default=func.now())
-  downloaded_time = Column(TIMESTAMP, default=None)
-  downloaded_items = relationship('Downloaded', back_populates='playlist')
-
-class Downloaded(Base):
-  __tablename__ = 'downloaded'
-  id = Column(Integer, autoincrement=True, primary_key=True)
-  title = Column(String)
-  playlist_url = Column(String, ForeignKey('playlists.url'))
-  url = Column(String)
-  path = Column(String)
-  elapsed = Column(String)
-  create_time = Column(TIMESTAMP, default=func.now())
-  playlist = relationship('Playlist', back_populates='downloaded_items')
-
-class Users(Base):
-  __tablename__ = "users"
-  id = Column(Integer, autoincrement=True, primary_key=True)
-  Username = Column(String, default=None, unique=True)
-  password = Column(String(50))
+  class Users(Base):
+    __tablename__ = "users"
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    Username = Column(String, default=None, unique=True)
+    password = Column(String(50))
 
 
 def spliturl(url: list):
@@ -60,88 +59,6 @@ def spliturl(url: list):
       url.append(video_id)
   return url
 
-class Database:
-    engine = None
 
-    def __init__(self):
-        self.connect(config.db.host, config.db.port, config.db.user, config.db.password, config.db.db) #type: ignore
-
-    def connect(self, host, port, user, password, database):
-        self.engine = create_engine(
-            f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}",
-            echo=False,
-            connect_args={"options": "-c timezone=America/Los_Angeles"}
-        )
-
-        self.session = sessionmaker(
-            bind=self.engine, expire_on_commit=False
-        )
-
-    def QueueNotDone(self):
-      with self.session() as session:
-        for item in session.execute(select(Playlist).filter(Playlist.queue_status == 'queued').order_by(Playlist.create_time.asc())).scalars().all():
-          logger.info(f'Retrieved URL from database: {item.url}')
-          yield item
-
-    def mark_playlist_downloaded(self, url, title):
-      try:
-        logger.debug(url)
-        stmt = (
-            update(Playlist)
-            .where(Playlist.url == url)
-            .values(
-              title=title,
-              queue_status='completed',
-              downloaded_time=func.now()
-            )
-        )
-        with self.session() as session:
-          with session.begin():
-            session.execute(stmt)
-            logger.info(f'Marked playlist "{url}" as downloaded')
-      except Exception as e:
-        logger.error(e)
-        
-    def mark_video_downloaded(self, playlist_url, url, title, download_path, elapsed):
-      with self.session() as session:
-        with session.begin():
-          new_download = Downloaded(
-            title=title,
-            playlist_url=playlist_url,
-            url=url,
-            path=download_path,
-            elapsed=elapsed,
-            )
-          session.add(new_download)
-          session.commit()
-
-    # def new_queue(self, url, vidtype: Optional[str]):
-    def new_queue(self, url):
-      with self.session() as session:
-        with session.begin():
-          # new_queue = Playlist(title=None, vidtype=vidtype, url=url, queue_status='queued')
-          new_queue = Playlist(title=None, url=url, queue_status='queued')
-          session.add(new_queue)
-          session.commit()
-
-    def db_create(self):
-      with self.engine.begin() as conn: 
-        Base.metadata.create_all(conn)
-
-    def reconnect(self):
-      self.session.close_all()
-      self.connect(config.db.host, config.db.port, config.db.user, config.db.password, config.db.db) 
-
-    def __enter__(self):
-      return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-      self.session.close_all()
-      if exc_type is not None:
-        raise
-
-
-
-
-
+class interactions
 
