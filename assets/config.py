@@ -9,6 +9,7 @@ class DbConfig(BaseModel):
   db: str
   user: str
   password: str
+  timezone: str
 
 class AppConfig(BaseModel):
   host: str
@@ -18,6 +19,7 @@ class AppConfig(BaseModel):
   debug: bool
   trace: bool
   ratelimit: Optional[int]
+  dbScanRate: int
   db: DbConfig
 
 

@@ -4,7 +4,6 @@ from typing import Optional
 from loguru import logger
 from concurrent.futures import ThreadPoolExecutor
 from pytube import Playlist
-import asyncio
 import sys
 from time import sleep
 from config import config
@@ -22,7 +21,7 @@ try:
           pass
       pass
 
-  debug_init(False, False)
+  debug_init(config.trace, config.debug)
 
   if __name__ != '__main__':
     try:
@@ -60,7 +59,6 @@ try:
         pass
 
   class Downloader:
-    debug_init(True, False)
     wait = False
     StatusStarted=False
     Started=False
@@ -81,9 +79,6 @@ try:
 
 
     
-    loop = asyncio.get_event_loop()
-    executor = ThreadPoolExecutor(max_workers=1)
-    loop.set_default_executor(executor)
 
 
     def __init__(

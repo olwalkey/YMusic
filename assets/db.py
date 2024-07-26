@@ -1,11 +1,13 @@
 from sqlalchemy import create_engine, Column, String, Integer, Sequence, TIMESTAMP, Boolean, Enum, select, ForeignKey, update
 from urllib.parse import urlparse, parse_qs
 from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
+from sqlalchemy.exc import DuplicateColumnError
 from typing import Any, TypedDict, cast
 from sqlalchemy.sql import func
 from typing import Optional
 from loguru import logger
 from config import config
+# from datetime import datetime
   
 Base = declarative_base()
 
@@ -37,6 +39,7 @@ class Tables():
     id = Column(Integer, autoincrement=True, primary_key=True)
     Username = Column(String, default=None, unique=True)
     password = Column(String(50))
+    salt = Column(String())
 
 
 def spliturl(url: list):
@@ -60,5 +63,37 @@ def spliturl(url: list):
   return url
 
 
-class interactions
+class interactions:
+  def __init__(self):
+    session = sessionmaker()
+    self.engine = create_engine(
+      f'postgresql+psycopg2://{config.db.user}@{config.db.host}:{config.db.port}/{config.db.db}',
+      pool_size=5,
+      max_overflow=0,
+      echo=False,
+      connect_args={"options": f"-c timezone={config.db.timezone}"}
+      )
+    self.stmt = (
 
+    )
+    
+
+   
+  def createEntry(self, title, url, datetime):
+    try:
+      conn = self.engine.connect()
+      entry=Tables.Playlist(title=None, url=url)
+      return 'Successfull'
+    except DuplicateColumnError as e:
+      return {
+        'data':{
+        'message': 'Url Already Exists',
+        'error': e
+        }
+      }
+
+  def getQueued(self):
+    pass
+
+  def test(self):
+    pass
