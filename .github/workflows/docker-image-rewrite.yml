@@ -2,7 +2,7 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "server-rewrite" ]
 
 jobs:
   push_to_registry:
@@ -32,6 +32,6 @@ jobs:
           push: true
           tags: |
             ghcr.io/kalebschmidlkofer/yt-dlf:${{ env.VERSION }}
-            ghcr.io/kalebschmidlkofer/yt-dlf:nightly
+            ghcr.io/kalebschmidlkofer/yt-dlf:latest-alpha
           labels: ${{ steps.meta.outputs.labels }}
 
