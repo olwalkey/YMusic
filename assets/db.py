@@ -1,20 +1,24 @@
 from sqlalchemy import create_engine, Column, String, Integer, Sequence, TIMESTAMP, Boolean, Enum, select, ForeignKey, update
-from urllib.parse import urlparse, parse_qs
 from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
-from sqlalchemy.exc import DuplicateColumnError
-from typing import Any, TypedDict, cast
 from sqlalchemy.sql import func
-from typing import Optional
+from sqlalchemy.exc import DuplicateColumnError
+
+from urllib.parse import urlparse, parse_qs
+
 from loguru import logger
+
+
 from config import config
-# from datetime import datetime
-  
+
+
+
 Base = declarative_base()
 
 
 class Tables():
-  class Playlist(Base):
-    __tablename__ = 'playlists'
+  class Requests(Base):
+    """Table for Storing Download Requests"""
+    __tablename__ = 'requests'
     id = Column(Integer, autoincrement=True, primary_key=True)
     title = Column(String, default=None)
     url = Column(String, unique=True)
@@ -24,6 +28,7 @@ class Tables():
     downloaded_items = relationship('Downloaded', back_populates='playlist')
 
   class Downloaded(Base):
+    """Table for Storing Downloaded videos"""
     __tablename__ = 'downloaded'
     id = Column(Integer, autoincrement=True, primary_key=True)
     title = Column(String)
@@ -35,18 +40,19 @@ class Tables():
     playlist = relationship('Playlist', back_populates='downloaded_items')
 
   class Users(Base):
+    """Table for Storing User Accounts and info"""
     __tablename__ = "users"
     id = Column(Integer, autoincrement=True, primary_key=True)
     Username = Column(String, default=None, unique=True)
     password = Column(String(50))
-    salt = Column(String())
+    salt = Column(String(100))
 
 
 def spliturl(url: list):
   """Splits url and returns the youtube video/playlist id
 
   Args:
-      url (string): Youtube url Eg: https://www.youtube.com/watch?v=sVJEaYNOUNw&t=162s
+      url (string): Youtube url Eg: https://www.youtube.com/watch?v=sVJEaYNOUNw
 
   Returns:
       string: End of youtube url
@@ -65,6 +71,14 @@ def spliturl(url: list):
 
 class interactions:
   def __init__(self):
+    self.fetchNextDownload=(
+      select(Tables.Requests)
+      .where(Tables.Requests.queue_status=='queued')
+      .order_by(Tables.Requests.queue_status, Tables.Requests.create_time.desc())
+    )
+
+
+  def _connect(self):
     session = sessionmaker()
     self.engine = create_engine(
       f'postgresql+psycopg2://{config.db.user}@{config.db.host}:{config.db.port}/{config.db.db}',
@@ -73,27 +87,46 @@ class interactions:
       echo=False,
       connect_args={"options": f"-c timezone={config.db.timezone}"}
       )
-    self.stmt = (
-
-    )
-    
 
    
-  def createEntry(self, title, url, datetime):
+  def createEntry(self, url):
+    """Creates An Entry in the Requests Table"""
     try:
       conn = self.engine.connect()
-      entry=Tables.Playlist(title=None, url=url)
-      return 'Successfull'
+      entry=Tables.Requests(title=None, url=url)
+      return {
+        'data':{
+        'message': 'Download request received and queued',
+        'error': None
+      }
+    }
     except DuplicateColumnError as e:
       return {
         'data':{
-        'message': 'Url Already Exists',
+        'message': f'Duplicate Entry. Link already exists!',
         'error': e
         }
       }
 
   def getQueued(self):
+    """Returns next item to download"""
+    conn = self.engine.connect()
+    fetch=conn.execute(statement=self.fetchNextDownload)
+    return fetch
+
+  def markVideoDownloaded(self, url, title):
+    """Adds An entry in Downloaded Table with the downloaded item"""
     pass
 
-  def test(self):
-    pass
+  def markPlaylistDownloaded(self, url, title):
+    """Marks A Playlist as completely Downloaded"""
+    self.updateDownloaded=(
+      update(Tables.Requests)
+      .where(Tables.Requests.url == url)
+      .values(
+        title=title,
+        queue_status="completed",
+        downloaded_time=func.now()
+      )
+    )
+    
