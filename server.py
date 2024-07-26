@@ -8,13 +8,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from concurrent.futures import ThreadPoolExecutor
 
+from datetime import datetime
 
 from time import sleep
 from munch import unmunchify
 
 from sqlalchemy.orm import Session
 
-from assets import *
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+# from assets import *
 
 
 
@@ -35,17 +38,15 @@ executor = ThreadPoolExecutor(max_workers=1)
 def scanDatabase():
     pass
 
-async def run_blocking_function(func):
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(executor, func)
-
-async def scanDatabase_async():
-    await run_blocking_function()
-
+def tick():
+  print('Tick! The time is: %s' % datetime.now())
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    asyncio.create_task(scanDatabase_async())
+
+    scheduler=AsyncIOScheduler()
+    scheduler.add_job(tick, 'interval', seconds=1)
+    scheduler.start()
     yield
     print('Shutting down...')
 
@@ -67,8 +68,8 @@ app.add_middleware(
 )
 
 
-def get_db():
-   db=SessionLocal
+# def get_db():
+#    db=SessionLocal
 
 #! Make use authentication
 @app.post('/download/{dltype}/{url}/')
@@ -78,7 +79,7 @@ async def download_route(dltype:str,  url: str):
       'message': f'An Error Occured', 
       'error': 'Incorrect DlType!'
         }
-  return await download.download(url=url, vidtype=dltype)
+  # return await download.download(url=url, vidtype=dltype)
 
 @app.get('/ping')
 async def ping():
@@ -87,7 +88,7 @@ async def ping():
 #! Make use authentication
 @app.get('/getjson')
 async def get_json():
-  data = youtube.getjson()
+  # data = youtube.getjson()
   data = unmunchify(data)
   return JSONResponse(content=data)
 
