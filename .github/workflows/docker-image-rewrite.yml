@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Rewrite Docker CI
 
 on:
   push:
