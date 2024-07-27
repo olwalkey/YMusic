@@ -146,7 +146,7 @@ class config:
 
     def fetch_data(self, apiurl):
         self.get()
-        r = requests.get(f'{apiurl}/getjson', auth=(self.munchconf.username, self.munchconf.password)) #type: ignore
+        r = requests.get(f'{apiurl}/getjson', auth=(self.munchconf.username.lower(), self.munchconf.password)) #type: ignore
         if r.status_code == 200:
             return r
         else:
@@ -170,7 +170,7 @@ def follow(
         logger.trace('not using ssl')
         apiurl=f'http://{conf.host}:{conf.port}'
     logger.trace(apiurl) 
-    r = requests.get(f'{apiurl}/getjson', auth=(conf.username, conf.password))
+    r = requests.get(f'{apiurl}/getjson', auth=(conf.username.lower(), conf.password))
     if r.status_code == 200:
         with Live(console=console, refresh_per_second=1) as live:
             while True:
