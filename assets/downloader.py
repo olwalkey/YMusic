@@ -165,8 +165,7 @@ try:
       """ url is the YT url for download """
       try:
         logger.info(f'begin download for {url}')
-        logger.trace('Start for loop')
-        with yt_dlp.YoutubeDL(self.playlist_title()) as ydl:
+        with yt_dlp.YoutubeDL(self.playlist_title_opts()) as ydl:
           result = ydl.extract_info(url, download=False)
           if result is not None:
             title_url = result['url']

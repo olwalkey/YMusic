@@ -47,6 +47,29 @@ class Tables():
     password = Column(String(50))
     salt = Column(String(100))
 
+  class Playlist(Base):
+    __tablename__ = 'playlists'
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    title = Column(String, default=None)
+    url = Column(String, unique=True)
+    queue_status = Column(Enum('queued', 'completed', name='queue_status'), default='queued')
+    create_time = Column(TIMESTAMP, default=func.now())
+    downloaded_time = Column(TIMESTAMP, default=None)
+    downloaded_items = relationship('Downloaded', back_populates='playlist')
+
+  class Downloaded(Base):
+    __tablename__ = 'downloaded'
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    title = Column(String)
+    playlist_url = Column(String, ForeignKey('playlists.url'))
+    url = Column(String)
+    path = Column(String)
+    elapsed = Column(String)
+    create_time = Column(TIMESTAMP, default=func.now())
+    playlist = relationship('Playlist', back_populates='downloaded_items')
+
+  itemsDownloads = Column(Integer, default=0)
+
 
 def spliturl(url: list):
   """Splits url and returns the youtube video/playlist id
