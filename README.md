@@ -29,3 +29,7 @@ you can fix this by eiither wrapping the url in quotes like
 or by adding a backslsh to the end of the url 
 
 `py client.py https://music.youtube.com/watch?v=SPWsptIhKkM&list=RDAMVMSPWsptIhKkM\`
+
+## Activity
+
+![Alt](https://repobeats.axiom.co/api/embed/155beec05c734960fcd4d8e0c428e7d3930d68d0.svg "Repobeats analytics image")
