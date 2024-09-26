@@ -2,16 +2,22 @@ FROM python:3.12-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache ffmpeg \
-    && apk add --virtual build-deps gcc python3-dev musl-dev postgresql-dev \
-    && pip install --upgrade pip
-COPY ./assets/app.py ./assets/downloader.py ./assets/db.py ./assets/config.py ./server-requirements.txt ./config.yaml /app/
+
+RUN apk add --no-cache ffmpeg 
+RUN apk add --virtual build-deps gcc python3-dev musl-dev postgresql-dev 
+RUN pip install --upgrade pip
+
+
+COPY app.py /app/app.py
+COPY utils/ /app/utils/
+COPY server-requirements.txt /app/requirements.txt
+
 
 RUN pip install --trusted-host pypi.python.org -r server-requirements.txt \
     && apk --purge del build-deps
 
-EXPOSE 5000
+EXPOSE 80
 
 ENV NAME World
 
-CMD ["python", "app.py"]
+CMD ["fastapi", "run", "app.py", "--port", "80"]
