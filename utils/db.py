@@ -8,7 +8,7 @@ from urllib.parse import urlparse, parse_qs
 from loguru import logger
 
 
-from config import config
+from .config import config
 
 
 Base = declarative_base()
@@ -141,4 +141,3 @@ class interactions:
                 downloaded_time=func.now()
             )
         )
-

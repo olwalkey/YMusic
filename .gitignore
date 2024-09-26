@@ -18,3 +18,4 @@ requirements_new.txt
 .server/
 .yt-dlfConfig.yaml
 docker-compose.yml
+*__pycache__*

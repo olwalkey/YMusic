@@ -11,6 +11,8 @@ from datetime import datetime
 from munch import unmunchify
 
 
+import utils
+
 download_lock = False
 
 shared_data = {
@@ -60,8 +62,8 @@ app.add_middleware(
 # Make use authentication
 @app.post('/download/{url}/')
 async def download_route(url: str):
-    # return await download.download(url=url, vidtype=dltype)
-    pass
+
+    return utils.youtube.start_download(url=url)
 
 
 @app.get('/ping')

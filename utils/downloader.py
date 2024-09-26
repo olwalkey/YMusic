@@ -4,7 +4,7 @@ from typing import Optional
 from loguru import logger
 from pytube import Playlist
 import sys
-from config import config
+from .config import config
 
 try:
     def debug_init(trace, debug):
@@ -28,8 +28,9 @@ try:
             try:
                 from .db import interactions
                 db = interactions()
-            except:
+            except Exception as e:
                 logger.error('Failed to import db')
+                logger.error(e)
                 exit()
     else:
         logger.warning("Didn't try to import db")

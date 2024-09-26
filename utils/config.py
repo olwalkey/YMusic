@@ -1,40 +1,43 @@
 from typing import Optional
 from pydantic import BaseModel, ValidationError
-import yaml, sys
+import yaml
+import sys
 from loguru import logger
 
+
 class DbConfig(BaseModel):
-  host: str
-  port: int
-  db: str
-  user: str
-  password: str
-  timezone: str
+    host: str
+    port: int
+    db: str
+    user: str
+    password: str
+    # timezone: str
+
 
 class AppConfig(BaseModel):
-  host: str
-  port: int
-  username: str
-  password: str
-  debug: bool
-  trace: bool
-  ratelimit: Optional[int]
-  dbScanRate: int
-  db: DbConfig
+    host: str
+    port: int
+    username: str
+    password: str
+    debug: bool
+    trace: bool
+    ratelimit: Optional[int]
+    # dbScanRate: int
+    db: DbConfig
 
 
 def load_config(file_path: str) -> AppConfig:
-  with open(file_path, 'r') as file:
-    yaml_data = yaml.safe_load(file)
-    try:
-      return AppConfig(**yaml_data)
-    except ValidationError as e:
-      raise ValueError(f"Invalid configuration: {e}")
+    with open(file_path, 'r') as file:
+        yaml_data = yaml.safe_load(file)
+        try:
+            return AppConfig(**yaml_data)
+        except ValidationError as e:
+            raise ValueError(f"Invalid configuration: {e}")
 
 
 file_path = 'config.yaml'
 try:
-  config = load_config(file_path)
+    config = load_config(file_path)
 except ValueError as e:
-  logger.error(e)
-  sys.exit(0)
+    logger.error(e)
+    sys.exit(0)

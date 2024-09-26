@@ -1,3 +1,3 @@
-from downloader import Downloader
+from .downloader import Downloader
 
-youtube = Downloader
+youtube = Downloader()
