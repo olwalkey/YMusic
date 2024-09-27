@@ -12,8 +12,22 @@ from datetime import datetime
 from munch import unmunchify
 from loguru import logger
 
+from sys import stderr
 
 import utils
+
+
+def debug_init(trace, debug):
+    logger.remove()
+    if debug:
+        logger.add(stderr, level='DEBUG')
+    elif trace:
+        logger.add(stderr, level='TRACE')
+    else:
+        logger.add(stderr, level='INFO')
+        pass
+    pass
+
 
 Database_con = False
 
@@ -38,6 +52,7 @@ def tick():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    debug_init(True, False)
     yield
     print('Shutting down...')
 
@@ -63,6 +78,8 @@ def check_database_con(func):
         if Database_con:
             result = func(*args, **kwargs)
         else:
+            logger.error(
+                '''There Was A problem connecting to database! Ensure the server is running and your Credentials are correct! If That doesn't work Run server in debug mode!''')
             return "There was A problem connecting to the database! Please check server logs"
         return result
     return wrapper
@@ -73,15 +90,13 @@ def time_function(func):
         start = time()
         func(*args, **kwargs)
         end = time()
-        logger.debug(f'{func.name} Took {end-start} To Execute')
+        logger.trace(f'{func.name} Took {end-start} To Execute')
 
 
 # def get_db():
 #    db=SessionLocal
 
 # Make use authentication
-
-
 @check_database_con
 @time_function
 @app.post('/download/{url}/')
@@ -89,12 +104,16 @@ async def download_route(url: str):
     return utils.youtube.start_download(url=url)
 
 
+@check_database_con
+@time_function
 @app.get('/ping')
 async def ping():
     return {'ping': 'pong'}
 
 
 # Make use authentication
+@check_database_con
+@time_function
 @app.get('/getjson')
 async def get_json():
     # data = youtube.getjson()
