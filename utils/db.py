@@ -1,8 +1,7 @@
 from sqlalchemy import create_engine, Column, String, Integer, Sequence, TIMESTAMP, Boolean, Enum, select, ForeignKey, update
 from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
 from sqlalchemy.sql import func
-from sqlalchemy.exc import DuplicateColumnError
-
+from sqlalchemy.exc import DuplicateColumnError, DBAPIError, OperationalError
 from urllib.parse import urlparse, parse_qs
 
 from loguru import logger
@@ -91,7 +90,7 @@ class interactions:
         )
 
     def _connect(self):
-        session = sessionmaker()
+        sessionmaker()
         self.engine = create_engine(
             f'postgresql+psycopg2://{config.db.user}@{
                 config.db.host}:{config.db.port}/{config.db.db}',
@@ -101,11 +100,19 @@ class interactions:
             connect_args={"options": f"-c timezone={config.db.timezone}"}
         )
 
+    def check_conn(self):
+        try:
+            self.engine.connect()
+        except OperationalError as e:
+            return {"conn": False, "type": "DBAPIError",  "error": e}
+        except DBAPIError as e:
+            return {"conn": False, "type": "DBAPIError", "error": e}
+
     def createEntry(self, url):
         """Creates An Entry in the Requests Table"""
         try:
-            conn = self.engine.connect()
-            entry = Tables.Requests(title=None, url=url)
+            self.engine.connect()
+            Tables.Requests(title=None, url=url)
             return {
                 'data': {
                     'message': 'Download request received and queued',
@@ -120,7 +127,7 @@ class interactions:
                 }
             }
 
-    def getQueued(self):
+    def fetchNextItem(self):
         """Returns next item to download"""
         conn = self.engine.connect()
         fetch = conn.execute(statement=self.fetchNextDownload)
