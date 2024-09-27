@@ -150,6 +150,7 @@ class interactions:
     def new_user(self, user, user_pass):
         self.engine.connect()
         user_salt = gensalt()
-        hasher = argon2.argon2_hash(user_pass, user_salt)
-        Tables.Users(username=user, password=hasher,
+        ph = argon2.PasswordHasher()
+        hash = ph.hash(password=user_pass, salt=user_salt)
+        Tables.Users(username=user, password=hash,
                      salt=user_salt)
