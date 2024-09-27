@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from functools import wraps
 import tracemalloc
@@ -51,28 +51,24 @@ shared_data = {
 }
 
 
-def check_database_con(DatabaseConFailures):
-    def check_database_con(func):
-        async def wrapper(*args, **kwargs):
-            if Database_con:
-                result = func(*args, **kwargs)
-                return result
-            else:
-                logger.error(
-                    '''There Was A problem connecting to database! Ensure the server is running and your Credentials are correct! If That doesn't work Run server in debug mode!''')
-                DatabaseConFailures += 1
-                print(DatabaseConFailures)
-
-                return False
-        return wrapper
-    return check_database_con
+def check_database_con(func):
+    async def wrapper(*args, **kwargs):
+        utils.interaction.check_conn()
+        if Database_con:
+            result = await func(*args, **kwargs)
+            return result
+        else:
+            logger.error(
+                '''There Was A problem connecting to database! Ensure the server is running and your Credentials are correct! If That doesn't work Run server in debug mode!''')
+            return "There Was A problem connecting to database! Ensure the server is running and your Credentials are correct! If That doesn't work Run server in debug mode!"
+    return wrapper
 
 
 def performance(func):
     async def wrapper(*args, **kwargs):
         tracemalloc.start()
         start_time = perf_counter()
-        func(*args, **kwargs)
+        await func(*args, **kwargs)
         current, peak = tracemalloc.get_traced_memory()
         finish_time = perf_counter()
         logger.trace(f'Function: {func.__name__}')
@@ -83,27 +79,26 @@ def performance(func):
                      finish_time - start_time:.6f}')
         logger.trace(f'{"-"*40}')
         tracemalloc.stop()
+    return wrapper
 
 
 @check_database_con
 @performance
 async def scanDatabase():
-    fetched = utils.interaction.fetchNextItem()
-
-    if not fetched:
-        return "There was A problem connecting to the database! Please check server logs"
-    else:
+    return utils.interaction.fetchNextItem()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    debug_init(True, False)
-    scheduler = BackgroundScheduler()
-    # Check and fetch next database item
+    debug_init(True, True)
+    scheduler = AsyncIOScheduler()
+    # Check and fetch next database item Every 5 seconds
     scheduler.add_job(scanDatabase, 'interval', seconds=5)
     scheduler.start()
     yield
+
     print('Shutting down...')
+    scheduler.shutdown()
 
 app = FastAPI(lifespan=lifespan)
 
@@ -122,11 +117,8 @@ app.add_middleware(
 )
 
 
-# def get_db():
-#    db=SessionLocal
-
 # Make use authentication
-@check_database_con(DatabaseConFailures)
+@check_database_con
 @performance
 @app.post('/download/{url}/')
 async def download_route(url: str):
@@ -134,7 +126,7 @@ async def download_route(url: str):
     return utils.youtube.start_download(url=url)
 
 
-@check_database_con(DatabaseConFailures)
+@check_database_con
 @performance
 @app.get('/ping')
 async def ping():
@@ -143,7 +135,7 @@ async def ping():
 
 
 # Make use authentication
-@check_database_con(DatabaseConFailures)
+@check_database_con
 @performance
 @app.get('/getjson')
 async def get_json():
