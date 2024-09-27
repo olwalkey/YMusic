@@ -11,7 +11,7 @@ class DbConfig(BaseModel):
     db: str
     user: str
     password: str
-    # timezone: str
+    timezone: str
 
 
 class AppConfig(BaseModel):
