@@ -4,6 +4,10 @@ from sqlalchemy.sql import func
 from sqlalchemy.exc import DuplicateColumnError, DBAPIError, OperationalError
 from urllib.parse import urlparse, parse_qs
 
+
+from bcrypt import gensalt
+import argon2
+
 from loguru import logger
 
 
@@ -25,14 +29,14 @@ class Tables():
         create_time = Column(TIMESTAMP, default=func.now())
         downloaded_time = Column(TIMESTAMP, default=None)
         downloaded_items = relationship(
-            'Downloaded', back_populates='playlist')
+            'Downloaded', back_populates='requests')
 
     class Downloaded(Base):
         """Table for Storing Downloaded videos"""
         __tablename__ = 'downloaded'
         id = Column(Integer, autoincrement=True, primary_key=True)
         title = Column(String)
-        playlist_url = Column(String, ForeignKey('playlists.url'))
+        playlist_url = Column(String, ForeignKey('requests.url'))
         url = Column(String)
         path = Column(String)
         elapsed = Column(String)
@@ -45,19 +49,8 @@ class Tables():
         id = Column(Integer, autoincrement=True, primary_key=True)
         Username = Column(String, default=None, unique=True)
         password = Column(String(50))
-        salt = Column(String(100))
-
-    class Playlist(Base):
-        __tablename__ = 'playlists'
-        id = Column(Integer, autoincrement=True, primary_key=True)
-        title = Column(String, default=None)
-        url = Column(String, unique=True)
-        queue_status = Column(
-            Enum('queued', 'completed', name='queue_status'), default='queued')
-        create_time = Column(TIMESTAMP, default=func.now())
-        downloaded_time = Column(TIMESTAMP, default=None)
-        downloaded_items = relationship(
-            'Downloaded', back_populates='playlist')
+        salt = Column(String(29))
+        admin = Column(Boolean(False))
 
 
 def spliturl(url: list):
@@ -100,9 +93,10 @@ class interactions:
             connect_args={"options": f"-c timezone={config.db.timezone}"}
         )
 
-    def check_conn(self):
+    def check_conn(self) -> dict:
         try:
             self.engine.connect()
+            return {"conn": True, "type": None, "error": None}
         except OperationalError as e:
             return {"conn": False, "type": "DBAPIError",  "error": e}
         except DBAPIError as e:
@@ -127,6 +121,10 @@ class interactions:
                 }
             }
 
+    def create_tables(self):
+        with self.engine.begin() as conn:
+            Base.metadata.create_all(conn)
+
     def fetchNextItem(self):
         """Returns next item to download"""
         conn = self.engine.connect()
@@ -148,3 +146,10 @@ class interactions:
                 downloaded_time=func.now()
             )
         )
+
+    def new_user(self, user, user_pass):
+        self.engine.connect()
+        user_salt = gensalt()
+        hasher = argon2.argon2_hash(user_pass, user_salt)
+        Tables.Users(username=user, password=hasher,
+                     salt=user_salt)
