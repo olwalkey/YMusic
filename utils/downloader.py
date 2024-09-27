@@ -77,7 +77,7 @@ try:
             download_path: Optional[str] = 'downloads/',
             port: Optional[int] = 5000,
         ):
-            self.db = interactions
+            self.db = interactions  # type: ignore
             if not host == None:
                 self.host = host
                 self.port = port
@@ -86,41 +86,43 @@ try:
         def progress_hook(self, d):
             d = munchify(d)
 
-            if d.status == 'error':
+            if d.status == 'error':  # type: ignore
                 pass
 
-            if d.status == 'finished':
-                logger.trace(f'Done Downloading "{d["filename"]}"')
-                self.StatusStarted = False
-                self.filename = d['filename']
-                self.time_elapse = d['elapsed']
+            if d.status == 'finished':  # type: ignore
+                logger.trace(f'Done Downloading "{
+                             d["filename"]}"')  # type: ignore
+                self.StatusStarted = False  # type: ignore
+                self.filename = d['filename']  # type: ignore
+                self.time_elapse = d['elapsed']  # type: ignore
                 self.PostProcessorStarted = False
 
-            if d.status == 'downloading':
+            if d.status == 'downloading':  # type: ignore
                 if not self.StatusStarted:
-                    logger.trace(f'Now Downloading "{d["filename"]}"')
+                    logger.trace(f'Now Downloading "{
+                                 d["filename"]}"')  # type: ignore
                     self.StatusStarted = True
 
-                self.filename = d['filename']
-                self.percent = d['_percent_str']
-                self.eta = d['_eta_str']
-                self.speed = d['speed']
+                self.filename = d['filename']  # type: ignore
+                self.percent = d['_percent_str']  # type: ignore
+                self.eta = d['_eta_str']  # type: ignore
+                self.speed = d['speed']  # type: ignore
 
         def postprocessor_hooks(self, d):
 
             d = munchify(d)
-            if d.status == 'started':
-                info = munchify(d['info_dict'])
-                self.url = info.webpage_url
-                self.title = info.title
-                self.download_path = info.filepath
+            if d.status == 'started':  # type: ignore
+                info = munchify(d['info_dict'])  # type: ignore
+                self.url = info.webpage_url  # type: ignore
+                self.title = info.title  # type: ignore
+                self.download_path = info.filepath  # type: ignore
                 self.Status = 'Started'
                 pass
-            if d.status == 'finished':
+            if d.status == 'finished':  # type: ignore
                 logger.trace('PostProcessor Hook finished')
                 if not self.PostProcessorStarted:
-                    self.db.mark_video_downloaded(playlist_url=self.playlist_url, url=self.url,
-                                                  title=self.title, download_path=self.download_path, elapsed=self.time_elapse)
+                    self.db.mark_video_downloaded(playlist_url=self.playlist_url, url=self.url,  # type: ignore
+                                                  title=self.title, download_path=self.download_path, elapsed=self.time_elapse)  # type: ignore
                     self.PostProcessorStarted = True
                 self.Status = 'Finished'
                 pass
