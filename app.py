@@ -124,8 +124,8 @@ app.add_middleware(
 @performance
 @app.post('/download/{url}/')
 async def download_route(url: str):
-    """Request A Download from the Database"""
-    return utils.youtube.start_download(url=url)
+    """Attempts to add url to database for download"""
+    utils.interaction.createEntry(url)
 
 
 @check_database_con
