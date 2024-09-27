@@ -15,4 +15,4 @@ db:
   db: youtube
   user: postgres
   password: Testpass
-  
+  timezone: America/Los_Angeles
