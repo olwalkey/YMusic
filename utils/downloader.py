@@ -22,12 +22,10 @@ try:
 
     if __name__ != '__main__':
         try:
-            from .db import interactions
-            db = interactions()
+            from . import interaction as interactions
         except ImportError:
             try:
-                from .db import interactions
-                db = interactions()
+                from . import interaction as interactions
             except Exception as e:
                 logger.error('Failed to import db')
                 logger.error(e)
@@ -79,7 +77,7 @@ try:
             download_path: Optional[str] = 'downloads/',
             port: Optional[int] = 5000,
         ):
-            self.db = interactions()
+            self.db = interactions
             if not host == None:
                 self.host = host
                 self.port = port
