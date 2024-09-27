@@ -123,6 +123,14 @@ class interactions:
                 }
             }
 
+        except Exception as e:
+            return {
+                'data': {
+                    'message': 'An unknown error occurred',
+                    'error': e
+                }
+            }
+
     def create_tables(self):
         with self.engine.begin() as conn:
             Base.metadata.create_all(conn)
