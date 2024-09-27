@@ -53,13 +53,14 @@ shared_data = {
 
 def check_database_con(func):
     async def wrapper(*args, **kwargs):
-        utils.interaction.check_conn()
-        if Database_con:
+        check = utils.interaction.check_conn()
+        if check['conn']:
             result = await func(*args, **kwargs)
             return result
         else:
             logger.error(
                 '''There Was A problem connecting to database! Ensure the server is running and your Credentials are correct! If That doesn't work Run server in debug mode!''')
+            logger.error(check)
             return "There Was A problem connecting to database! Ensure the server is running and your Credentials are correct! If That doesn't work Run server in debug mode!"
     return wrapper
 
@@ -91,6 +92,7 @@ async def scanDatabase():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     debug_init(True, True)
+    utils.interaction.create_tables()
     scheduler = AsyncIOScheduler()
     # Check and fetch next database item Every 5 seconds
     scheduler.add_job(scanDatabase, 'interval', seconds=5)
