@@ -29,7 +29,7 @@ class Tables():
         create_time = Column(TIMESTAMP, default=func.now())
         downloaded_time = Column(TIMESTAMP, default=None)
         downloaded_items = relationship(
-            'Downloaded', back_populates='requests')
+            'Downloaded', back_populates='playlist')
 
     class Downloaded(Base):
         """Table for Storing Downloaded videos"""
@@ -37,17 +37,16 @@ class Tables():
         id = Column(Integer, autoincrement=True, primary_key=True)
         title = Column(String)
         playlist_url = Column(String, ForeignKey('requests.url'))
-        url = Column(String)
         path = Column(String)
         elapsed = Column(String)
         create_time = Column(TIMESTAMP, default=func.now())
-        playlist = relationship('Playlist', back_populates='downloaded_items')
+        playlist = relationship('Requests', back_populates='downloaded_items')
 
     class Users(Base):
         """Table for Storing User Accounts and info"""
         __tablename__ = "users"
         id = Column(Integer, autoincrement=True, primary_key=True)
-        Username = Column(String, default=None, unique=True)
+        Username = Column(String, unique=True)
         password = Column(String(50))
         salt = Column(String(29))
         admin = Column(Boolean(False))
@@ -92,10 +91,13 @@ class interactions:
             echo=False,
             connect_args={"options": f"-c timezone={config.db.timezone}"}
         )
+        self.conn = self.engine.connect()
+        self.userConn = self.engine.connect()
 
     def check_conn(self) -> dict:
         try:
-            self.engine.connect()
+            conn = self.engine.connect()
+            conn.close()
             return {"conn": True, "type": None, "error": None}
         except OperationalError as e:
             return {"conn": False, "type": "DBAPIError",  "error": e}
@@ -124,11 +126,12 @@ class interactions:
     def create_tables(self):
         with self.engine.begin() as conn:
             Base.metadata.create_all(conn)
+        conn.close()
 
     def fetchNextItem(self):
         """Returns next item to download"""
-        conn = self.engine.connect()
-        fetch = conn.execute(statement=self.fetchNextDownload)
+        fetch = self.conn.execute(statement=self.fetchNextDownload)
+
         return fetch
 
     def markVideoDownloaded(self, url, title):
@@ -148,7 +151,6 @@ class interactions:
         )
 
     def new_user(self, user, user_pass):
-        self.engine.connect()
         user_salt = gensalt()
         ph = argon2.PasswordHasher()
         hash = ph.hash(password=user_pass, salt=user_salt)
