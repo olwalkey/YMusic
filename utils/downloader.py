@@ -68,7 +68,7 @@ try:
         title = None
         playlist_url = None
         PostProcessorStarted = None
-        PlaylistTitle = None
+        Album = None
         downloading = False
 
         def __init__(
@@ -112,19 +112,30 @@ try:
             d = munchify(d)
             if d.status == 'started':  # type: ignore
                 info = munchify(d['info_dict'])  # type: ignore
+                self.Album = info.album  # type: ignore
                 self.url = info.webpage_url  # type: ignore
                 self.title = info.title  # type: ignore
                 self.download_path = info.filepath  # type: ignore
                 self.Status = 'Started'
-                pass
+                logger.debug(f"""
+                            {self.Album}
+                            {self.url}
+                            {self.title}
+                             {self.download_path}
+                             {self.Status}""")
+
             if d.status == 'finished':  # type: ignore
                 logger.trace('PostProcessor Hook finished')
                 if not self.PostProcessorStarted:
-                    self.db.mark_video_downloaded(playlist_url=self.playlist_url, url=self.url,  # type: ignore
-                                                  title=self.title, download_path=self.download_path, elapsed=self.time_elapse)  # type: ignore
+                    self.db.markVideoDownloaded(
+                        playlisturl=self.playlist_url,
+                        url=self.url,  # type: ignore
+                        title=self.title,
+                        download_path=self.download_path,
+                        elapsed=self.time_elapse)
+
                     self.PostProcessorStarted = True
                 self.Status = 'Finished'
-                pass
 
         def ydl_opts(self):
             ydl_opts = {
@@ -154,20 +165,21 @@ try:
             return ydl_opts
 
         def start_download(self, url):
-            """ Start Download using a youtube url """
+            """Start Download using a youtube url """
             # try:
             logger.info(f'begin download for {url}')
             with yt_dlp.YoutubeDL(self.playlist_title_opts()) as ydl:
                 result = ydl.extract_info(url, download=False)
                 if result is not None:
-                    title_url = result['webpage_url']
-                    self.PlaylistTitle = result['title']
+                    title_url = result.get('url')
+                    self.playlist_url = title_url
                 else:
                     logger.error(f"Couldn't extract info for URL: {url}")
             with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
                 self.playlist_url = url
                 ydl.download(url)
-                self.db.markPlaylistDownloaded(url, self.PlaylistTitle)
+                self.db.markPlaylistDownloaded(
+                    self.playlist_url, self.Album)
         # except Exception as e:
             # logger.error(e)
 
@@ -178,7 +190,8 @@ try:
                     'filename': self.filename,
                     'time_elapse': self.time_elapse,
                     'percent': self.percent,
-                    'eta': self.eta
+                    'eta': self.eta,
+                    'url': self.playlist_url
                 },
             }
             return data
