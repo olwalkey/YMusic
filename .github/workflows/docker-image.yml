@@ -2,7 +2,9 @@ name: Rewrite Docker CI
 
 on:
   push:
-    branches: [ "server-rewrite" ]
+    branches: [ "master" ]
+  workflow_dispatch:
+
 
 jobs:
   push_to_registry:
