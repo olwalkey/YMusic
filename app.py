@@ -107,7 +107,7 @@ async def scanDatabase():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    debug_init(True, True)
+    debug_init(False, False)
     utils.interaction.create_tables()
     scheduler = AsyncIOScheduler()
     # Check and fetch next database item Every 5 seconds
