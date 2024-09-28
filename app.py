@@ -185,8 +185,12 @@ async def register(user: User, token: str = Depends(oauth2_scheme)):
 @performance
 @app.post("/login", response_model=Token)
 async def login(req: Request, form_data: OAuth2PasswordRequestForm = Depends()):
-    verif, user = utils.interaction.verify_user(
-        form_data.username, form_data.password)
+    try:
+        verif, user = utils.interaction.verify_user(
+            form_data.username, form_data.password)
+    except TypeError:
+        verif = False
+
     if not verif:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
