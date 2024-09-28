@@ -15,13 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Get version from file
         id: get_version
         run: echo "VERSION=$(cat version)" >> $GITHUB_ENV
@@ -41,12 +34,14 @@ jobs:
         run: echo "repo_lowercase=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v2
+        uses: mr-smithers-excellent/docker-build-push@v6
         with:
-          context: .
-          file: ./Dockerfile
-          push: true
+          image: ghcr.io/naterfute/yt-dlf
+          registry: ghcr.io
+          platform: linux/amd64,linux/arm64,linux/arm/v7
+          username: ${{ secrets.GHCR_USERNAME }}
+          password: ${{ secrets.GHCR_TOKEN }}
           tags: |
-            ghcr.io/kalebschmidlkofer/yt-dlf:${{ env.VERSION }}
+            ghcr.io/${{ env.repo_lowercase }}:${{ env.VERSION }}
             ghcr.io/${{ env.repo_lowercase }}:${{ env.LATEST }}
           labels: ${{ steps.meta.outputs.labels }}
