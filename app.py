@@ -90,8 +90,8 @@ def performance(func):
         logger.trace(f'Method: {func.__doc__}')
         logger.trace(f'Memory usage:\t\t {current / 10**6:.6f} MB \n'
                      f'Peak memory usage:\t {peak / 10**6:.6f} MB ')
-        logger.trace(f'Time elapsed is seconds: {
-                     finish_time - start_time:.6f}')
+        logger.trace(f'''Time elapsed is seconds: {
+                     finish_time - start_time:.6f}''')
         logger.trace(f'{"-"*40}')
         tracemalloc.stop()
     return wrapper
