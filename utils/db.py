@@ -88,7 +88,7 @@ class interactions:
                 config.db.host}:{config.db.port}/{config.db.db}',
             pool_size=5,
             max_overflow=0,
-            echo=False,
+            echo=True,
             connect_args={"options": f"-c timezone={config.db.timezone}"}
         )
         self.conn = self.engine.connect()
@@ -107,8 +107,9 @@ class interactions:
     def createEntry(self, url):
         """Creates An Entry in the Requests Table"""
         try:
-            self.engine.connect()
-            Tables.Requests(title=None, url=url)
+
+            Tables.Requests(url=url)
+            self.conn.commit()
             return {
                 'data': {
                     'message': 'Download request received and queued',
