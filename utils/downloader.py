@@ -2,7 +2,6 @@ import yt_dlp
 from munch import munchify
 from typing import Optional
 from loguru import logger
-from pytube import Playlist
 import sys
 from .config import config
 
@@ -156,23 +155,21 @@ try:
 
         def start_download(self, url):
             """ Start Download using a youtube url """
-            try:
-                logger.info(f'begin download for {url}')
-                with yt_dlp.YoutubeDL(self.playlist_title_opts()) as ydl:
-                    result = ydl.extract_info(url, download=False)
-                    if result is not None:
-                        title_url = result['url']
-                        playlist = Playlist(title_url)
-                        logger.trace(f'Playlist: {playlist}')
-                        self.PlaylistTitle = playlist.title
-                    else:
-                        logger.error(f"Couldn't extract info for URL: {url}")
-                with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
-                    self.playlist_url = url
-                    ydl.download(url)
-                    self.db.markPlaylistDownloaded(url, self.PlaylistTitle)
-            except Exception as e:
-                logger.error(e)
+            # try:
+            logger.info(f'begin download for {url}')
+            with yt_dlp.YoutubeDL(self.playlist_title_opts()) as ydl:
+                result = ydl.extract_info(url, download=False)
+                if result is not None:
+                    title_url = result['webpage_url']
+                    self.PlaylistTitle = result['title']
+                else:
+                    logger.error(f"Couldn't extract info for URL: {url}")
+            with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
+                self.playlist_url = url
+                ydl.download(url)
+                self.db.markPlaylistDownloaded(url, self.PlaylistTitle)
+        # except Exception as e:
+            # logger.error(e)
 
         def getjson(self):
             data = {
