@@ -32,11 +32,12 @@ class Tables():
         downloaded_items = relationship(
             'Downloaded', back_populates='playlist')
 
-    class Downloaded(Base):
+    class CompletedDownloads(Base):
         """Table for Storing Downloaded videos"""
         __tablename__ = 'downloaded'
         id = Column(Integer, autoincrement=True, primary_key=True)
         title = Column(String)
+        url = Column(String)
         playlist_url = Column(String, ForeignKey('requests.url'))
         path = Column(String)
         elapsed = Column(String)
@@ -145,9 +146,24 @@ class interactions:
         fetch = self.conn.execute(statement=self.fetchNextDownload)
         return fetch.fetchone()
 
-    def markVideoDownloaded(self, url, title):
+    def markVideoDownloaded(
+        self,
+        playlisturl,
+        url,
+        title,
+        download_path,
+        elapsed
+    ):
         """Adds An entry in Downloaded Table with the downloaded item"""
-        pass
+        with self.session() as session:
+            new_download = Tables.Downloaded(
+                title=title,
+                url=url,
+                path=download_path,
+                elapsed=elapsed,
+                downloaded_items=playlisturl)
+            session.add(new_download)
+            session.commit()
 
     def markPlaylistDownloaded(self, url, title):
         """Marks A Playlist as completely Downloaded"""
