@@ -42,6 +42,5 @@ jobs:
           username: ${{ secrets.GHCR_USERNAME }}
           password: ${{ secrets.GHCR_TOKEN }}
           tags: |
-            ghcr.io/${{ env.repo_lowercase }}:${{ env.VERSION }}
-            ghcr.io/${{ env.repo_lowercase }}:${{ env.LATEST }}
+            2.0.7
           labels: ${{ steps.meta.outputs.labels }}
