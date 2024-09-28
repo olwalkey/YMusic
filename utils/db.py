@@ -192,7 +192,6 @@ class interactions:
                 session.commit()
                 session.refresh(new_user)
                 return new_user
-            return "Succefully Made new User!"
 
     def verify_user(self, user: str, password: str):
         """Verify the sent password to the stored password"""
