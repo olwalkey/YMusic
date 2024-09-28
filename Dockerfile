@@ -13,7 +13,7 @@ COPY utils/ /app/utils/
 COPY server-requirements.txt /app/requirements.txt
 
 
-RUN pip install --trusted-host pypi.python.org -r server-requirements.txt \
+RUN pip install --trusted-host pypi.python.org -r requirements.txt \
     && apk --purge del build-deps
 
 EXPOSE 80
