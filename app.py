@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+from pydantic import BaseModel
+
 from functools import wraps
 import tracemalloc
 from time import perf_counter
@@ -145,3 +147,15 @@ async def get_json():
     # data = youtube.getjson()
     data = unmunchify(shared_data)
     return JSONResponse(content=data)
+
+
+class User(BaseModel):
+    username: str
+    password: str
+
+
+@check_database_con
+@performance
+@app.post('/register')
+async def register(user: User):
+    return utils.interaction.new_user(user.username, user.password)
