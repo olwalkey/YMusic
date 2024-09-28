@@ -12,7 +12,7 @@ from loguru import logger
 
 
 from .config import config
-
+from . import schemas
 
 Base = declarative_base()
 
@@ -162,20 +162,22 @@ class interactions:
         )
 
     def fetchUser(self, user):
+        """Checks if A user exists by username"""
         fetchedUser = (
             select(Tables.Users)
             .where(Tables.Users.username == user))
         try:
             fetch = self.conn.execute(statement=fetchedUser)
-            return fetch.fetchall()
+            return fetch.fetchone()
 
         except Exception as e:
             logger.error(e)
             return None
 
     def new_user(self, user: str, user_pass: str):
+        """Created A new user using username and password"""
         myfetch = self.fetchUser(user)
-        if len(myfetch) != 0:
+        if len(myfetch) != 0:  # type: ignore
             logger.error('User already exists')
             return "User already Exists"
         else:
@@ -188,12 +190,17 @@ class interactions:
                                         salt=user_salt, admin=False)
                 session.add(new_user)
                 session.commit()
+                session.refresh(new_user)
+                return new_user
             return "Succefully Made new User!"
 
     def verify_user(self, user: str, password: str):
+        """Verify the sent password to the stored password"""
         user_hash = self.fetchUser(user)
         if user_hash is None:
-            return 'Failed to Verify'
-        user_hash = user_hash.password
+            return False
+        hashed_password = user_hash[2]
         ph = argon2.PasswordHasher()
-        ph.verify(user_hash, password)
+        print(ph.verify(hashed_password, password))
+        ph.check_needs_rehash(hashed_password)
+        return True, user_hash[1]
