@@ -14,5 +14,4 @@ EXPOSE 5000
 
 ENV NAME World
 
-#CMD ["fastapi", "run", "code/app.py" '--port', '80', '--proxy-headers']
-CMD ["fastapi", "run", "app.py"]
+CMD ["python", "app.py"]
