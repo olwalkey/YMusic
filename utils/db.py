@@ -32,7 +32,7 @@ class Tables():
         downloaded_items = relationship(
             'Downloaded', back_populates='playlist')
 
-    class CompletedDownloads(Base):
+    class Downloaded(Base):
         """Table for Storing Downloaded videos"""
         __tablename__ = 'downloaded'
         id = Column(Integer, autoincrement=True, primary_key=True)
@@ -155,27 +155,41 @@ class interactions:
         elapsed
     ):
         """Adds An entry in Downloaded Table with the downloaded item"""
-        with self.session() as session:
-            new_download = Tables.Downloaded(
-                title=title,
-                url=url,
-                path=download_path,
-                elapsed=elapsed,
-                downloaded_items=playlisturl)
-            session.add(new_download)
-            session.commit()
+        try:
+            with self.session() as session:
+                logger.debug(session)
+                related_playlist = session.query(
+                    Tables.Requests).filter_by(url=playlisturl).first()
+                if not related_playlist:
+                    logger.error(f"No playlist found for url {url}")
+                new_download = Tables.Downloaded(
+                    title=title,
+                    url=url,
+                    path=download_path,
+                    elapsed=elapsed,
+                    playlist=related_playlist)
+                logger.debug(new_download)
+                session.add(new_download)
+                session.commit()
+        except Exception as e:
+            logger.error(e)
 
     def markPlaylistDownloaded(self, url, title):
         """Marks A Playlist as completely Downloaded"""
-        self.updateDownloaded = (
-            update(Tables.Requests)
-            .where(Tables.Requests.url == url)
-            .values(
-                title=title,
-                queue_status="completed",
-                downloaded_time=func.now()
+        with self.session() as session:
+            logger.debug("")
+            self.updateDownloaded = (
+                update(Tables.Requests)
+                .where(Tables.Requests.url == url)
+                .values(
+                    title=title,
+                    queue_status="completed",
+                    downloaded_time=func.now()
+                )
             )
-        )
+            logger.debug(self.updateDownloaded)
+            session.execute(self.updateDownloaded)
+            session.commit()
 
     def fetchUser(self, user):
         """Checks if A user exists by username"""
