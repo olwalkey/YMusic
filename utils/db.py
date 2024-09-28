@@ -1,5 +1,5 @@
-from sqlalchemy import create_engine, Column, String, Integer, Sequence, TIMESTAMP, Boolean, Enum, select, ForeignKey, update
-from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
+from sqlalchemy import create_engine, select, update
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 from sqlalchemy.exc import DuplicateColumnError, DBAPIError, OperationalError
 from urllib.parse import urlparse, parse_qs
@@ -12,46 +12,10 @@ from loguru import logger
 
 
 from .config import config
+
 from . import schemas
-
-Base = declarative_base()
-
-
-class Tables():
-    class Requests(Base):
-        """Table for Storing Download Requests"""
-        __tablename__ = 'requests'
-        id = Column(Integer, autoincrement=True, primary_key=True)
-        title = Column(String, default=None)
-        url = Column(String, unique=True)
-        extractor = Column(String(100))
-        queue_status = Column(
-            Enum('queued', 'completed', name='queue_status'), default='queued')
-        create_time = Column(TIMESTAMP, default=func.now())
-        downloaded_time = Column(TIMESTAMP, default=None)
-        downloaded_items = relationship(
-            'Downloaded', back_populates='playlist')
-
-    class Downloaded(Base):
-        """Table for Storing Downloaded videos"""
-        __tablename__ = 'downloaded'
-        id = Column(Integer, autoincrement=True, primary_key=True)
-        title = Column(String)
-        url = Column(String)
-        playlist_url = Column(String, ForeignKey('requests.url'))
-        path = Column(String)
-        elapsed = Column(String)
-        create_time = Column(TIMESTAMP, default=func.now())
-        playlist = relationship('Requests', back_populates='downloaded_items')
-
-    class Users(Base):
-        """Table for Storing User Accounts and info"""
-        __tablename__ = "users"
-        id = Column(Integer, autoincrement=True, primary_key=True)
-        username = Column(String(50), unique=True)
-        password = Column(String(500))
-        salt = Column(String(100))
-        admin = Column(Boolean(False))
+from . import models as Tables
+from .models import Base
 
 
 def spliturl(url: list):
@@ -144,6 +108,8 @@ class interactions:
     def fetchNextItem(self):
         """Returns next item to download"""
         fetch = self.conn.execute(statement=self.fetchNextDownload)
+        if fetch is None:
+            return None
         return fetch.fetchone()
 
     def markVideoDownloaded(
