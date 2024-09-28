@@ -82,17 +82,17 @@ class interactions:
         )
 
     def _connect(self):
-        sessionmaker()
         self.engine = create_engine(
             f'postgresql+psycopg2://{config.db.user}@{
                 config.db.host}:{config.db.port}/{config.db.db}',
             pool_size=5,
             max_overflow=0,
-            echo=True,
+            echo=False,
             connect_args={"options": f"-c timezone={config.db.timezone}"}
         )
         self.conn = self.engine.connect()
         self.userConn = self.engine.connect()
+        self.session = sessionmaker(bind=self.engine, expire_on_commit=False)
 
     def check_conn(self) -> dict:
         try:
@@ -107,15 +107,17 @@ class interactions:
     def createEntry(self, url):
         """Creates An Entry in the Requests Table"""
         try:
+            with self.session() as session:
+                new_request = Tables.Requests(url=url)
+                session.add(new_request)
+                session.commit()
 
-            Tables.Requests(url=url)
-            self.conn.commit()
-            return {
-                'data': {
-                    'message': 'Download request received and queued',
-                    'error': None
+                return {
+                    'data': {
+                        'message': 'Download request received and queued',
+                        'error': None
+                    }
                 }
-            }
         except DuplicateColumnError as e:
             return {
                 'data': {
