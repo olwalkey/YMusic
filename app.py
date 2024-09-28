@@ -125,7 +125,7 @@ app.add_middleware(
 @app.post('/download/{url}/')
 async def download_route(url: str):
     """Attempts to add url to database for download"""
-    utils.interaction.createEntry(url)
+    return utils.interaction.createEntry(url)
 
 
 @check_database_con
