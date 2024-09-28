@@ -207,7 +207,6 @@ class interactions:
     def new_user(self, user: str, user_pass: str):
         """Created A new user using username and password"""
         myfetch = self.fetchUser(user)
-        logger.error(myfetch)
         if myfetch == None:
             myfetch = []
 
