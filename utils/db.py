@@ -46,9 +46,9 @@ class Tables():
         """Table for Storing User Accounts and info"""
         __tablename__ = "users"
         id = Column(Integer, autoincrement=True, primary_key=True)
-        Username = Column(String, unique=True)
-        password = Column(String(50))
-        salt = Column(String(29))
+        username = Column(String(50), unique=True)
+        password = Column(String(500))
+        salt = Column(String(100))
         admin = Column(Boolean(False))
 
 
@@ -143,7 +143,7 @@ class interactions:
         """Returns next item to download"""
         fetch = self.conn.execute(statement=self.fetchNextDownload)
 
-        return fetch
+        return fetch.fetchone()
 
     def markVideoDownloaded(self, url, title):
         """Adds An entry in Downloaded Table with the downloaded item"""
@@ -161,9 +161,39 @@ class interactions:
             )
         )
 
-    def new_user(self, user, user_pass):
-        user_salt = gensalt()
+    def fetchUser(self, user):
+        fetchedUser = (
+            select(Tables.Users)
+            .where(Tables.Users.username == user))
+        try:
+            fetch = self.conn.execute(statement=fetchedUser)
+            return fetch.fetchall()
+
+        except Exception as e:
+            logger.error(e)
+            return None
+
+    def new_user(self, user: str, user_pass: str):
+        myfetch = self.fetchUser(user)
+        if len(myfetch) != 0:
+            logger.error('User already exists')
+            return "User already Exists"
+        else:
+            user = user.lower()
+            user_salt = gensalt()
+            ph = argon2.PasswordHasher()
+            hash = ph.hash(password=user_pass, salt=user_salt)
+            with self.session() as session:
+                new_user = Tables.Users(username=user, password=hash,
+                                        salt=user_salt, admin=False)
+                session.add(new_user)
+                session.commit()
+            return "Succefully Made new User!"
+
+    def verify_user(self, user: str, password: str):
+        user_hash = self.fetchUser(user)
+        if user_hash is None:
+            return 'Failed to Verify'
+        user_hash = user_hash.password
         ph = argon2.PasswordHasher()
-        hash = ph.hash(password=user_pass, salt=user_salt)
-        Tables.Users(username=user, password=hash,
-                     salt=user_salt)
+        ph.verify(user_hash, password)
