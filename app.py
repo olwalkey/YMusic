@@ -176,7 +176,7 @@ class User(BaseModel):
 @check_database_con
 @performance
 @app.post('/register')
-async def register(user: User, token: str = Depends(oauth2_scheme)):
+async def register(user: User):
     data = utils.interaction.new_user(user.username, user.password)
     data.password = "Hidden For Security"  # type: ignore
     data.salt = "Hidden For Security"  # type: ignore
@@ -204,3 +204,15 @@ async def login(req: Request, form_data: OAuth2PasswordRequestForm = Depends()):
         data={"sub": user}, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
+
+
+if __name__ == "__main__":
+    from typer import Typer
+    cli = Typer(no_args_is_help=True, add_completion=False)
+
+    @cli.command('user')
+    def localregister(username: str, password: str):
+        user: User = User(username=username, password=password)
+        utils.interaction.new_user(user.username, user.password)
+
+    cli()
