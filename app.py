@@ -1,22 +1,22 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException,  Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+import jwt
+
 from pydantic import BaseModel
+
+from datetime import timedelta, datetime
 
 from functools import wraps
 import tracemalloc
 from time import perf_counter
 
-
-from time import time
-
-from datetime import datetime
 
 from munch import unmunchify
 from loguru import logger
@@ -24,6 +24,12 @@ from loguru import logger
 from sys import stderr
 
 import utils
+
+
+# Use a strong secret key
+SECRET_KEY = "d7fe6bb7e5a7277930129997d82d84e8024d336013ceeb09877129c506913552"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 def debug_init(trace, debug):
@@ -41,6 +47,12 @@ def debug_init(trace, debug):
 Database_con: bool = False
 
 DatabaseConFailures: int = 0
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
 
 shared_data = {
     'info': {
@@ -105,8 +117,7 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown()
 
 app = FastAPI(lifespan=lifespan)
-
-oath2_scheme = OAuth2PasswordBearer(tokenUrl="Token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 origins = [
     '*'
@@ -121,11 +132,17 @@ app.add_middleware(
 )
 
 
-# Make use authentication
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + (expires_delta if expires_delta else timedelta(minutes=15))
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
 @check_database_con
 @performance
 @app.post('/download/{url}/')
-async def download_route(url: str):
+async def download_route(url: str, token: str = Depends(oauth2_scheme)):
     """Attempts to add url to database for download"""
     return utils.interaction.createEntry(url)
 
@@ -142,7 +159,7 @@ async def ping():
 @check_database_con
 @performance
 @app.get('/getjson')
-async def get_json():
+async def get_json(token: str = Depends(oauth2_scheme)):
     """Get current downloading information"""
     # data = youtube.getjson()
     data = unmunchify(shared_data)
@@ -158,4 +175,26 @@ class User(BaseModel):
 @performance
 @app.post('/register')
 async def register(user: User):
-    return utils.interaction.new_user(user.username, user.password)
+    data = utils.interaction.new_user(user.username, user.password)
+    data.password = "Hidden For Security"  # type: ignore
+    data.salt = "Hidden For Security"  # type: ignore
+    return data
+
+
+@check_database_con
+@performance
+@app.post("/login", response_model=Token)
+async def login(req: Request, form_data: OAuth2PasswordRequestForm = Depends()):
+    verif, user = utils.interaction.verify_user(
+        form_data.username, form_data.password)
+    if not verif:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user}, expires_delta=access_token_expires
+    )
+    return Token(access_token=access_token, token_type="bearer")
