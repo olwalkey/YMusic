@@ -1,5 +1,4 @@
-
-from .db import interactions
+from .db import interactions, Tables
 
 interaction = interactions()
 interaction._connect()
