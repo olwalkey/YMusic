@@ -24,6 +24,7 @@ class Tables():
         id = Column(Integer, autoincrement=True, primary_key=True)
         title = Column(String, default=None)
         url = Column(String, unique=True)
+        extractor = Column(String(100))
         queue_status = Column(
             Enum('queued', 'completed', name='queue_status'), default='queued')
         create_time = Column(TIMESTAMP, default=func.now())
@@ -176,6 +177,10 @@ class interactions:
     def new_user(self, user: str, user_pass: str):
         """Created A new user using username and password"""
         myfetch = self.fetchUser(user)
+        logger.error(myfetch)
+        if myfetch == None:
+            myfetch = []
+
         if len(myfetch) != 0:  # type: ignore
             logger.error('User already exists')
             return "User already Exists"
