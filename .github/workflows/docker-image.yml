@@ -1,8 +1,8 @@
-name: Master Docker CI
+name: Rewrite Docker CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "server-rewrite" ]
 
 jobs:
   push_to_registry:
@@ -32,10 +32,10 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
 
-      - name: Create latest tag
-        id: create_latest_tag
-        run: echo LATEST=latest >> $GITHUB_ENV
-      
+      - name: Create nightly tag
+        id: create_nightly_tag
+        run: echo "NIGHTLY_TAG=nightly" >> $GITHUB_ENV
+
       - name: Set repository name in lowercase
         id: set_lowercase_repo
         run: echo "repo_lowercase=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
@@ -47,6 +47,6 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ghcr.io/kalebschmidlkofer/yt-dlf:${{ env.VERSION }}
-            ghcr.io/${{ env.repo_lowercase }}:${{ env.LATEST }}
+            ghcr.io/${{ env.repo_lowercase }}:${{ env.VERSION }}
+            ghcr.io/${{ env.repo_lowercase }}:latest
           labels: ${{ steps.meta.outputs.labels }}
