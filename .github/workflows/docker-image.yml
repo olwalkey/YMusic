@@ -2,18 +2,20 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - master
 
 jobs:
   push_to_registry:
-    name: Build and Push Docker image to GitHub Container Registry
+    name: Build and Push Docker Image to GitHub Container Registry
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Get version from file
         id: get_version
@@ -24,11 +26,11 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: ghcr.io/${{ github.repository }}
-
+          
       - name: Create latest tag
         id: create_latest_tag
-        run: echo LATEST=latest >> $GITHUB_ENV
-      
+        run: echo "LATEST=latest" >> $GITHUB_ENV
+
       - name: Set repository name in lowercase
         id: set_lowercase_repo
         run: echo "repo_lowercase=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
@@ -36,11 +38,13 @@ jobs:
       - name: Build and push Docker image
         uses: mr-smithers-excellent/docker-build-push@v6
         with:
-          image: ghcr.io/naterfute/yt-dlf
+          image: ghcr.io/${{ github.repository }}  # Use the repository from the context
           registry: ghcr.io
           platform: linux/amd64,linux/arm64,linux/arm/v7
           username: ${{ secrets.GHCR_USERNAME }}
           password: ${{ secrets.GHCR_TOKEN }}
           tags: |
-            2.0.7
+            ${{ env.VERSION }}  # Use the version from the environment variable
+            latest  # Add the latest tag
           labels: ${{ steps.meta.outputs.labels }}
+
