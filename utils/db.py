@@ -142,7 +142,6 @@ class interactions:
     def fetchNextItem(self):
         """Returns next item to download"""
         fetch = self.conn.execute(statement=self.fetchNextDownload)
-
         return fetch.fetchone()
 
     def markVideoDownloaded(self, url, title):
@@ -200,6 +199,6 @@ class interactions:
             return False
         hashed_password = user_hash[2]
         ph = argon2.PasswordHasher()
-        print(ph.verify(hashed_password, password))
+        ph.verify(hashed_password, password)
         ph.check_needs_rehash(hashed_password)
         return True, user_hash[1]
