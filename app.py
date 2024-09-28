@@ -100,7 +100,9 @@ def performance(func):
 @check_database_con
 @performance
 async def scanDatabase():
-    return utils.interaction.fetchNextItem()
+    next_item = utils.interaction.fetchNextItem()
+    if next_item is not None:
+        utils.youtube.start_download(next_item[2])
 
 
 @asynccontextmanager
