@@ -34,7 +34,7 @@ jobs:
 
       - name: Create nightly tag
         id: create_nightly_tag
-        run: echo "NIGHTLY_TAG=nightly" >> $GITHUB_ENV
+        run: echo "NIGHTLY_TAG=dev" >> $GITHUB_ENV
 
       - name: Set repository name in lowercase
         id: set_lowercase_repo
