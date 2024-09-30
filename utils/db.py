@@ -100,10 +100,6 @@ class interactions:
                 }
             }
 
-    def create_tables(self):
-        with self.engine.begin() as conn:
-            Base.metadata.create_all(conn)
-        conn.close()
 
     def fetchNextItem(self):
         """Returns next item to download"""

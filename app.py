@@ -106,7 +106,6 @@ def scanDatabase():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     debug_init(False, False)
-    utils.interaction.create_tables()
     scheduler = BackgroundScheduler()
     # Check and fetch next database item Every 5 seconds
     scheduler.add_job(scanDatabase, 'interval', seconds=5)
