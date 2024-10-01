@@ -320,7 +320,8 @@ def download(
         if response.status_code == 200:
             logger.info(response.json())
         else:
-            print(f'Failure: {response.status_code}')
+            logger.error(f'Failure: {response.status_code}')
+            logger.error(response)
         pass
 
 
