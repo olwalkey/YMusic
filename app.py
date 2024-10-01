@@ -173,7 +173,7 @@ class User(BaseModel):
 @check_database_con
 @performance
 @app.post('/register')
-async def register(user: User):
+async def register(user: User, token: str = Depends(oauth2_scheme)):
     data = utils.interaction.new_user(user.username, user.password)
     data.password = "Hidden For Security"  # type: ignore
     data.salt = "Hidden For Security"  # type: ignore
