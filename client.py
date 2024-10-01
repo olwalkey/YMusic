@@ -289,11 +289,11 @@ def download(
     else:
         protocol = "http"
     if not conf.port == '80' or conf.port == '443':
-        apiurl=f'{protocol}://{conf.host}:{conf.port}'   
+        apiurl=f'{protocol}://{conf.host}:{conf.port}'
     else:
-        apiurl=f'{protocol}://{conf.host}'   
+        apiurl=f'{protocol}://{conf.host}'
     try:
-      login(apiurl, conf.username, conf.password)
+      headers=login(apiurl, conf.username, conf.password)
       r = requests.get(f'{apiurl}/ping')
       r = munchify(r.json())
       logger.info(f'Pinging server: {r.ping}') #type: ignore
@@ -316,7 +316,7 @@ def download(
     logger.trace(f'Full Urls: {urls}')
     for x in url:
         logger.debug(f'{apiurl}/download/{x[0]}')
-        response = requests.post(f'{apiurl}/download/{x[0]}', auth=(conf.username, conf.password))
+        response = requests.post(f'{apiurl}/download/{x[0]}', headers=headers)
         if response.status_code == 200:
             logger.info(response.json())
         else:
