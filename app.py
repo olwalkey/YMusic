@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 
 import jwt
 
@@ -97,9 +97,7 @@ def performance(func):
     return wrapper
 
 
-@check_database_con
-@performance
-async def scanDatabase():
+def scanDatabase():
     next_item = utils.interaction.fetchNextItem()
     if next_item is not None:
         utils.youtube.start_download(next_item[2])
@@ -108,8 +106,7 @@ async def scanDatabase():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     debug_init(False, False)
-    utils.interaction.create_tables()
-    scheduler = AsyncIOScheduler()
+    scheduler = BackgroundScheduler()
     # Check and fetch next database item Every 5 seconds
     scheduler.add_job(scanDatabase, 'interval', seconds=5)
     scheduler.start()
@@ -176,7 +173,7 @@ class User(BaseModel):
 @check_database_con
 @performance
 @app.post('/register')
-async def register(user: User):
+async def register(user: User, token: str = Depends(oauth2_scheme)):
     data = utils.interaction.new_user(user.username, user.password)
     data.password = "Hidden For Security"  # type: ignore
     data.salt = "Hidden For Security"  # type: ignore

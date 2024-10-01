@@ -22,6 +22,10 @@ trace = False
 pwd=Path(__file__).parent.resolve()
 confpath = path.join(pwd, '.yt-dlfConfig.yaml')
 
+
+
+
+
 obj = munchify({})
 
 def debug_init(trace, debug):
@@ -55,21 +59,81 @@ def spliturl(urls):
     return url
 
 
+def store_token(token):
+    import json
+    data = {"token": token}
+    with open('.token.json', 'w') as f:
+        f.write(json.dumps(data))
+        f.close()
+
+def read_token():
+    """Returns Authorization Headers for a requests using pythons request library"""
+    try:
+        import json
+        with open('.token.json', 'r') as f:
+            data = json.loads(f.read())
+            data = munchify(data)
+
+        headers = {
+            "Authorization": f"Bearer {data.token}" # type: ignore
+        }
+
+        return headers
+    
+    except FileNotFoundError as e:
+        logger.debug(e)
+        return False
+
+
+
+def login(apiurl, username, password):
+    formed_data = {
+    "username": username,
+    "password": password
+}
+
+    logger.debug(f"""
+        username: {username}
+        password: {password}
+        apiurl: {apiurl}
+    """)
+    logger.trace("logging in")
+    try:
+        logger.trace("Checking current token validity")
+        token = read_token()
+        if token:
+            request= requests.get(f'{apiurl}/getjson', headers=token)
+            logger.debug(request.json())
+            return token
+        else:
+            response = requests.post(f'{apiurl}/login', data=formed_data)
+            response = munchify(response.json())
+            logger.debug(response)
+            store_token(response.access_token) # type: ignore
+            token = read_token()
+            logger.debug(token)
+            logger.debug(requests.get(f'{apiurl}/getjson', headers=token)) # type: ignore
+
+    except Exception as e:
+        logger.error(e)
+
+
+
+
 app = Typer(no_args_is_help=True, add_completion=False)
 
 
 class config:
     class AppConfig(BaseModel):
         host: str
-        protocol: str
+        ssl: bool = False
         port: int
         username: str
         password: str
-        debug: bool = False
-        trace: bool = False
 
     def __init__(self):
         self.check_exist()
+
 
     def check_exist(self):
         import os.path
@@ -79,7 +143,7 @@ class config:
             logger.warning('this will overwrite your current config if one exists!')
             genconf=input('Would you like to Generate a config? y/n  ')
             if genconf.lower() == 'y':
-                localconf=self.AppConfig(host='None', port=0, protocol='None', username='None', password='None')
+                localconf=self.AppConfig(host='None', port=0, ssl=False, username='None', password='None')
                 jsondata=loads(localconf.model_dump_json())
                 newconf={}
                 for field in jsondata:
@@ -143,28 +207,37 @@ class config:
         return table
 
 
-    def fetch_data(self, apiurl):
+    def fetch_data(self, apiurl, headers):
         self.get()
-        r = requests.get(f'{apiurl}/getjson', auth=(self.munchconf.username, self.munchconf.password)) #type: ignore
+        r = requests.get(f'{apiurl}/getjson', headers=headers) #type: ignore
         if r.status_code == 200:
             return r
         else:
             return None
 
 @app.command()
-def follow():
+def follow(
+    trace: Optional[bool] = Option(False, '-t', '--trace', is_flag=True, help='Enable trace-level debugging.'),
+    debug: Optional[bool] = Option(False, '-d', '--debug', is_flag=True, help='Enables debug-level debugging'),
+):
+    debug_init(trace, debug)
     Cclass= config()
     console = Console()
     conf = Cclass.get()
-    if not conf.port == '80' or conf.port == '443':
-        apiurl=f'{conf.protocol}://{conf.host}:{conf.port}'   
+    if conf.ssl:
+        protocol = "https"
     else:
-        apiurl=f'{conf.protocol}://{conf.host}'
-    r = requests.get(f'{apiurl}/getjson', auth=(conf.username, conf.password))
+        protocol = "http"
+    if not conf.port == '80' or conf.port == '443':
+        apiurl=f'{protocol}://{conf.host}:{conf.port}'   
+    else:
+        apiurl=f'{protocol}://{conf.host}'
+    headers = login(apiurl, conf.username, conf.password)
+    r = requests.get(f'{apiurl}/getjson', headers=headers)
     if r.status_code == 200:
         with Live(console=console, refresh_per_second=1) as live:
             while True:
-                data = Cclass.fetch_data(apiurl)
+                data = Cclass.fetch_data(apiurl, headers)
                 data = data.json() #type: ignore
                 if data:
                     table = Cclass.make_table(data)
@@ -188,13 +261,13 @@ def getconf():
 def editconf(
     host: Optional[str] = Option(None, '-h', '--host', help='change host ex; youtube.downloader.com'),
     port: Optional[int] = Option(None, '-p', '--port', help='Change port ex; 5000'),
-    protocol: Optional[str] = Option(None, '-pr', '--protocol', help='change protocol ex; http'),
+    ssl: Optional[bool] = Option(None, '-ssl', help='change ssl usage or not'),
     username: Optional[str] = Option(None, '-u', '--username', help='change username ex; MyUsername'),
     password: Optional[str] = Option(None, '-pa', '--password', help='change password ex; SuperSecretPassword'),
     
     ):
     Cclass=config()
-    mydict={'host': host, 'port': port, 'protocol': protocol, 'username': username, 'password': password}
+    mydict={'host': host, 'port': port, 'ssl': ssl, 'username': username, 'password': password}
     for x, y in mydict.items():
         if y:
             Cclass.update(x, y)
@@ -205,27 +278,22 @@ def editconf(
 def download(
     trace: Optional[bool] = Option(False, '-t', '--trace', is_flag=True, help='Enable trace-level debugging.'),
     debug: Optional[bool] = Option(False, '-d', '--debug', is_flag=True, help='Enables debug-level debugging'),
-    audio: Optional[bool] = Option(True, '-a', '--audio', is_flag=True, help='Whether to download Audio'),
-    video: Optional[bool] = Option(False, '-v', '--video', is_flag=True, help='Whether to download Video'),
     urls: list[str] = Argument(),
     
 ):
     debug_init(trace, debug)
     Cclass=config()
     conf=Cclass.get()
-    if video:
-      audio=False
-    if audio:
-      dltype = 'audio'
-    else: 
-      dltype = 'video'
-      logger.error('Video Downloading is not yet supported, consider making a pull request to change this!')
-      exit()
-    if not conf.port == '80' or conf.port == '443':
-        apiurl=f'{conf.protocol}://{conf.host}:{conf.port}'   
+    if conf.ssl:
+        protocol = "https"
     else:
-        apiurl=f'{conf.protocol}://{conf.host}'   
+        protocol = "http"
+    if not conf.port == '80' or conf.port == '443':
+        apiurl=f'{protocol}://{conf.host}:{conf.port}'
+    else:
+        apiurl=f'{protocol}://{conf.host}'
     try:
+      headers=login(apiurl, conf.username, conf.password)
       r = requests.get(f'{apiurl}/ping')
       r = munchify(r.json())
       logger.info(f'Pinging server: {r.ping}') #type: ignore
@@ -247,12 +315,13 @@ def download(
     
     logger.trace(f'Full Urls: {urls}')
     for x in url:
-        logger.debug(f'{apiurl}/download/{dltype}/{x[0]}')
-        response = requests.get(f'{apiurl}/download/{dltype}/{x[0]}', auth=(conf.username, conf.password))
+        logger.debug(f'{apiurl}/download/{x[0]}')
+        response = requests.post(f'{apiurl}/download/{x[0]}', headers=headers)
         if response.status_code == 200:
             logger.info(response.json())
         else:
-            print(f'Failure: {response.status_code}')
+            logger.error(f'Failure: {response.status_code}')
+            logger.error(response)
         pass
 
 
