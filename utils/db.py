@@ -49,7 +49,7 @@ class interactions:
 
     def _connect(self):
         self.engine = create_engine(
-            f'postgresql+psycopg2://{config.db.user}@{
+            f'postgresql+psycopg2://{config.db.user}:{config.db.password}@{
                 config.db.host}:{config.db.port}/{config.db.db}',
             pool_size=5,
             max_overflow=0,
