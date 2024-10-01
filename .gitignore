@@ -19,3 +19,4 @@ requirements_new.txt
 .yt-dlfConfig.yaml
 docker-compose.yml
 *__pycache__*
+.token.json
