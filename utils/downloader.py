@@ -138,6 +138,7 @@ try:
                 self.Status = 'Finished'
 
         def ydl_opts(self):
+
             ydl_opts = {
                 'ratelimit': config.ratelimit,  # Kilobytes
                 'restrictfilenames': config.restrictfilenames,
@@ -146,7 +147,6 @@ try:
                 'progress_hooks': [self.progress_hook],
                 'postprocessor_hooks': [self.postprocessor_hooks],
                 'writethumbnail': True,
-                'outtmpl': 'downloads/%(playlist_title)s/%(playlist_autonumber)s - %(title)s.%(ext)s',
                 'skip_broken': True,
                 'ignoreerrors': True,
                 'postprocessors': [
@@ -156,6 +156,11 @@ try:
                     {'add_metadata': 'True', 'key': 'FFmpegMetadata'},
                     {'already_have_thumbnail': False, 'key': 'EmbedThumbnail'}
                 ]}
+            if config.restrictfilenames:
+                ydl_opts["outtmpl"] = 'downloads/%(playlist_title)s/%(playlist_autonumber)s-%(title)s.%(ext)s'
+            else:
+                ydl_opts["outtmpl"] = 'downloads/%(playlist_title)s/%(playlist_autonumber)s - %(title)s.%(ext)s'
+
             return ydl_opts
 
         def playlist_title_opts(self):
