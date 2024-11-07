@@ -140,6 +140,7 @@ try:
         def ydl_opts(self):
             ydl_opts = {
                 'ratelimit': config.ratelimit,  # Kilobytes
+                'restrictfilenames': config.restrictfilenames,
                 'logger': MyLogger(),
                 'breakonexisting': True,
                 'progress_hooks': [self.progress_hook],

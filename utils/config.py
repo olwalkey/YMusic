@@ -21,7 +21,8 @@ class AppConfig(BaseModel):
     password: str
     debug: bool
     trace: bool
-    ratelimit: Optional[int]
+    ratelimit: int
+    restrictfilenames: bool
     # dbScanRate: int
     db: DbConfig
 
