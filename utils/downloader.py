@@ -119,7 +119,6 @@ try:
 
 
 
-
     def ydl_opts(self):
 
         ydl_opts = {
@@ -132,18 +131,23 @@ try:
             'writethumbnail': True,
             'skip_broken': True,
             'ignoreerrors': True,
+            'format': 'bestaudio',
+            'writeinfojson': True,
+            'writesubtitles': True,
+            'subtitleslangs': ['en'],
+            'prefer_ffmpeg': True,
+            'quiet': True,
             'postprocessors': [
                 {'key': 'FFmpegExtractAudio',
-                 'preferredcodec': 'mp3',
-                 'preferredquality': 'None'},
+                 'preferredcodec': config.codec},
                 {'add_metadata': 'True', 'key': 'FFmpegMetadata'},
                 {'already_have_thumbnail': False, 'key': 'EmbedThumbnail'}
             ]}
 
         if config.restrictfilenames:
-            ydl_opts["outtmpl"] = 'downloads/%(playlist_title)s/%(playlist_autonumber)s-%(title)s.%(ext)s'
+            ydl_opts["outtmpl"] = 'downloads/%{id}_%(playlist_title)s/%(playlist_autonumber)s-%(title)s.%(ext)s'
         else:
-            ydl_opts["outtmpl"] = 'downloads/%(playlist_title)s/%(playlist_autonumber)s - %(title)s.%(ext)s'
+            ydl_opts["outtmpl"] = 'downloads/%{id}_%(playlist_title)s/%(playlist_autonumber)s - %(title)s.%(ext)s'
 
         return ydl_opts
 
@@ -161,6 +165,20 @@ try:
         def __init__(self):
             pass
 
+        def download(self):
+            pass
+
+        def pre_download(self):
+            pass
+
+        def post_download(self):
+            pass
+
+        def get_info(self):
+            pass
+
+        def update_info(self):
+            pass
 
 
 
