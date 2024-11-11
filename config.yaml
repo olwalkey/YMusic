@@ -4,6 +4,8 @@ port: 5000
 username: default
 password: default
 
+codec: opus
+
 debug: False
 trace: False
 
