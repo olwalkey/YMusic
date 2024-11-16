@@ -1,25 +1,23 @@
 # yt-dlf server rewrite
 
-This Project starts a web-server and take url requests to download the youtube videos onto a remote server.
+## What is this branch?
 
-I'm rewriting the server side for better performance and cleaner more readable code
+This branch is going to be **another** rewrite of the server side web api,
+this time though, we are swapping web frameworks, we are using a relitively new
+one called [robyn](https://robyn.tech/), It's a python framework built in rust.
+I have no idea how this is going to affect the app, but there is only one way
+to find out.
+
 
 
 ## Migration Guide
-
-Ha, There isn't one. It's Over for you.
-
-Just kidding, only slightly, I'm making one, a very bad one at that.
-Why wouldn't you want to use it?
-
-1. This not gonna work
-1. This gonna break everything
-1. I might just start fresh with new data
-
 
 > [!IMPORTANT]
 > We Have MIGRATIONS!!!!!!
 > Using A very cool library called [alembic](https://pypi.org/project/alembic/)
 > We now will use alembic to securely store our database migrations to prevent any
 > "Mishaps" From happening in the future
+
+To use the migrations, you don't have to do anything. The program will deal with them
+by it's self!
 
