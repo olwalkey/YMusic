@@ -1,7 +1,30 @@
 from robyn import Robyn, Request, Response, jsonify
+from robyn.robyn import QueryParams
+from robyn.types import PathParams
+
 from loguru import logger
 
+from apscheduler.schedulers.background import BackgroundScheduler
+
+import utils
+
+
 app = Robyn(__file__)
+
+@app.startup_handler
+async def startup_handler():
+    scheduler = BackgroundScheduler()
+
+    scheduler.add_job(scanDatabase, 'interval', seconds=5)
+    scheduler.start()
+
+
+def scanDatabase():
+    next_item = utils.interaction.fetchNextItem()
+    logger.info(next_item)
+    if next_item is not None:
+        utils.youtube.start_download(next_item[2])
+
 
 
 
@@ -22,18 +45,25 @@ async def downloading_info():
     pass
 
 @app.get("/latest/:num")
-async def get_latest_downloads(request, path_params):
+async def get_latest_downloads(request, path_params: PathParams):
     """Get last 10 downloaded items"""
-    num: int = path_params['num']
+    num: int = int(path_params['num'])
     return jsonify({"num": num})
+
+@app.get("/ping")
+async def ping():
+    return jsonify({"ping": "pong!"})
+
+
 
 
 @app.post("/download/:app/:url")
-async def download(request, path_params):
+async def download(request, path_params: PathParams):
     """Takes a url and downloads the supplied video/song/playlist"""
     app: str = path_params['app']
     url: str = path_params['url']
-    return jsonify({"url": url, "app": app})
+
+    return utils.interaction.createEntry(url)
 
 
 @app.post("/login")
