@@ -2,7 +2,7 @@ name: Dev Docker CI
 
 on:
   push:
-    branches: [ "dev", "robyn"]
+    branches: ["robyn"]
 
 jobs:
   push_to_registry:
@@ -47,6 +47,6 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ env.repo_lowercase }}:${{ env.VERSION }}-${{ github.ref }}
-            ghcr.io/${{ env.repo_lowercase }}:${{ env.NIGHTLY_TAG }}-${{ github.ref }}
+            ghcr.io/${{ env.repo_lowercase }}:${{ env.VERSION }}-robyn
+            ghcr.io/${{ env.repo_lowercase }}:${{ env.NIGHTLY_TAG }}-robyn
           labels: ${{ steps.meta.outputs.labels }}
