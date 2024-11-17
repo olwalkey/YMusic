@@ -5,9 +5,10 @@ from sqlalchemy import pool
 
 from alembic import context
 
-
-from utils.models import Base
-# from models import Base
+try:
+    from utils.models import Base
+except Exception:
+    from models import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
