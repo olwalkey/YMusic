@@ -16,6 +16,7 @@ app = Robyn(__file__)
 startTime = datetime.now()
 app.inject_global(starttime=startTime)
 
+app.inject_global(downloadinfo={"Nothing":"N/A"})
 @app.startup_handler
 async def startup_handler():
     scheduler = BackgroundScheduler()
@@ -46,32 +47,34 @@ async def get_server_info(global_dependencies):
     return jsonify({"uptime": f"{uptime}"})
 
 @app.get("/downloading")
-async def downloading_info():
+async def downloading_info(global_dependencies):
     """Gets info About the current downloading item"""
-    pass
+    infojson = global_dependencies["downloadinfo"]
+    return jsonify(infojson)
 
 @app.get("/latest/:num")
 async def get_latest_downloads(request, path_params: PathParams):
     """Get latest downloaded items
     Gets same number of recent as you provide with num var
+    within a 64 bit range
     """
     num: int = int(path_params['num'])
     return jsonify({"num": num})
 
 @app.get("/ping")
-async def ping():
+async def ping(request):
+
     return jsonify({"ping": "pong!"})
 
 
 
 
-@app.post("/download/:app/:url")
+@app.post("/download/:url")
 async def download(request, path_params: PathParams):
     """Takes a url and downloads the supplied video/song/playlist"""
-    app: str = path_params['app']
     url: str = path_params['url']
 
-    return utils.interaction.createEntry(url, app)
+    return utils.interaction.createEntry(url)
 
 
 @app.post("/login")
