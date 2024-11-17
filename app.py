@@ -21,6 +21,11 @@ startTime = datetime.now()
 app.inject_global(starttime=startTime)
 
 app.inject_global(downloadinfo={"Nothing":"N/A"})
+
+utils.initapp(app)
+
+logger.warning(app.dependencies.__dict__)
+
 @app.startup_handler
 async def startup_handler():
     scheduler = BackgroundScheduler()
@@ -58,6 +63,7 @@ async def get_server_info(global_dependencies):
             "Alembic": alembicversion,
         },
     })
+
 
 @app.get("/downloading")
 async def downloading_info(global_dependencies):

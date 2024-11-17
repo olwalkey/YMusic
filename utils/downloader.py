@@ -3,7 +3,21 @@ from munch import munchify
 from typing import Optional, Any
 from loguru import logger
 import sys
+
 from .config import config
+from robyn import Robyn
+
+
+
+
+class robyn:
+    @classmethod
+    def __init__(cls, app: Robyn):
+        cls.robyn = app.dependencies.__dict__["global_dependency_map"]
+        cls.robyn["starttime"] = "YIPPEEE"
+        logger.error(cls.robyn["starttime"])
+
+        
 
 try:
     def debug_init(trace, debug):
