@@ -1,6 +1,6 @@
 import yt_dlp
 from munch import munchify
-from typing import Optional
+from typing import Optional, Any
 from loguru import logger
 import sys
 from .config import config
@@ -156,10 +156,6 @@ try:
                     {'add_metadata': 'True', 'key': 'FFmpegMetadata'},
                     {'already_have_thumbnail': False, 'key': 'EmbedThumbnail'}
                 ]}
-            if config.restrictfilenames:
-                ydl_opts["outtmpl"] = 'downloads/%(playlist_title)s/%(playlist_autonumber)s-%(title)s.%(ext)s'
-            else:
-                ydl_opts["outtmpl"] = 'downloads/%(playlist_title)s/%(playlist_autonumber)s - %(title)s.%(ext)s'
 
             return ydl_opts
 
@@ -171,21 +167,39 @@ try:
             return ydl_opts
 
         def start_download(self, url):
-            """Start Download using a youtube url """
+            """Start Download using a url """
             # try:
             logger.info(f'begin download for {url}')
             with yt_dlp.YoutubeDL(self.playlist_title_opts()) as ydl:
                 result = ydl.extract_info(url, download=False)
+
                 if result is not None:
                     title_url = result.get('url')
+                    logger.debug(f"Title Opts results: {result}")
                     self.playlist_url = title_url
+                    self.extractor = result.get('extractor')
+
                 else:
                     logger.error(f"Couldn't extract info for URL: {url}")
-            with yt_dlp.YoutubeDL(self.ydl_opts()) as ydl:
+
+            opts = self.ydl_opts()
+            if self.extractor == "youtube":
+                plopts: str = "%(uploader)s/[%(id)s]"
+            else:
+                plopts: str = "%(playlist_title)s/%(playlist_autonumber)s-[%(id)s]"
+
+            if config.restrictfilenames:
+                opts["outtmpl"] = f'downloads/{plopts}-%(title)s.%(ext)s'
+            else:
+                opts["outtmpl"] = f'downloads/{plopts} - %(title)s.%(ext)s'
+            logger.error(opts)
+
+            with yt_dlp.YoutubeDL(opts) as ydl:
                 self.playlist_url = url
                 ydl.download(url)
                 self.db.markPlaylistDownloaded(
-                    self.playlist_url, self.Album)
+                    self.playlist_url, self.Album, self.extractor)
+
         # except Exception as e:
             # logger.error(e)
 
