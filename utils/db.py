@@ -13,7 +13,6 @@ from loguru import logger
 
 from .config import config
 
-from . import schemas
 from . import models as Tables
 from .models import Base
 
@@ -70,11 +69,11 @@ class interactions:
         except DBAPIError as e:
             return {"conn": False, "type": "DBAPIError", "error": e}
 
-    def createEntry(self, url):
+    def createEntry(self, id):
         """Creates An Entry in the Requests Table"""
         try:
             with self.session() as session:
-                new_request = Tables.Requests(url=url)
+                new_request = Tables.Requests(url=id)
                 session.add(new_request)
                 session.commit()
 
@@ -136,7 +135,7 @@ class interactions:
         except Exception as e:
             logger.error(e)
 
-    def markPlaylistDownloaded(self, url, title):
+    def markPlaylistDownloaded(self, url, title, extractor):
         """Marks A Playlist as completely Downloaded"""
         with self.session() as session:
             logger.debug("")
@@ -146,7 +145,8 @@ class interactions:
                 .values(
                     title=title,
                     queue_status="completed",
-                    downloaded_time=func.now()
+                    downloaded_time=func.now(),
+                    extractor=extractor,
                 )
             )
             logger.debug(self.updateDownloaded)
