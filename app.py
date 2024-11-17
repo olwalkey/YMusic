@@ -2,6 +2,8 @@ from robyn import Robyn, Request, Response, jsonify
 from robyn.robyn import QueryParams
 from robyn.types import PathParams
 
+from datetime import datetime
+
 from loguru import logger
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -10,6 +12,9 @@ import utils
 
 
 app = Robyn(__file__)
+
+startTime = datetime.now()
+app.inject_global(starttime=startTime)
 
 @app.startup_handler
 async def startup_handler():
@@ -29,7 +34,7 @@ def scanDatabase():
 
 
 @app.get("/info")
-async def get_server_info():
+async def get_server_info(global_dependencies):
     """Gets Info about the running server
     eg.  
     version  
@@ -37,7 +42,8 @@ async def get_server_info():
     Important lib Versions  
     How many songs have been downloaded
     """
-    return "Test"
+    uptime = datetime.now() - global_dependencies['starttime']
+    return jsonify({"uptime": f"{uptime}"})
 
 @app.get("/downloading")
 async def downloading_info():
@@ -46,7 +52,9 @@ async def downloading_info():
 
 @app.get("/latest/:num")
 async def get_latest_downloads(request, path_params: PathParams):
-    """Get last 10 downloaded items"""
+    """Get latest downloaded items
+    Gets same number of recent as you provide with num var
+    """
     num: int = int(path_params['num'])
     return jsonify({"num": num})
 
@@ -63,7 +71,7 @@ async def download(request, path_params: PathParams):
     app: str = path_params['app']
     url: str = path_params['url']
 
-    return utils.interaction.createEntry(url)
+    return utils.interaction.createEntry(url, app)
 
 
 @app.post("/login")
