@@ -5,9 +5,13 @@ from robyn.types import PathParams
 from datetime import datetime
 
 from loguru import logger
-
 from apscheduler.schedulers.background import BackgroundScheduler
 
+
+from robyn import __version__ as robynversion
+from sqlalchemy import __version__ as alchversion
+from alembic import __version__ as alembicversion
+from yt_dlp.version import __version__ as ytversion
 import utils
 
 
@@ -44,13 +48,23 @@ async def get_server_info(global_dependencies):
     How many songs have been downloaded
     """
     uptime = datetime.now() - global_dependencies['starttime']
-    return jsonify({"uptime": f"{uptime}"})
+    return jsonify({
+        "app_version": "idk bro",
+        "uptime": f"{uptime}",
+        "versions": {
+            "Robyn": robynversion,
+            "Yt-DLP": ytversion,
+            "SqlAlchemy": alchversion,
+            "Alembic": alembicversion,
+        },
+    })
 
 @app.get("/downloading")
 async def downloading_info(global_dependencies):
     """Gets info About the current downloading item"""
     infojson = global_dependencies["downloadinfo"]
     return jsonify(infojson)
+
 
 @app.get("/latest/:num")
 async def get_latest_downloads(request, path_params: PathParams):
@@ -59,7 +73,8 @@ async def get_latest_downloads(request, path_params: PathParams):
     within a 64 bit range
     """
     num: int = int(path_params['num'])
-    return jsonify({"num": num})
+    return jsonify({"message": "WIP: Coming soon, I'm just lazy"})
+
 
 @app.get("/ping")
 async def ping(request):
@@ -75,6 +90,8 @@ async def download(request, path_params: PathParams):
     url: str = path_params['url']
 
     return utils.interaction.createEntry(url)
+
+
 
 
 @app.post("/login")
