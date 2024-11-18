@@ -15,6 +15,7 @@ curl_cffi==0.7.1
 dill==0.3.9
 dnspython==2.6.1
 email_validator==2.2.0
+graphql-core==3.2.5
 greenlet==3.0.3
 h11==0.14.0
 httpcore==1.0.5
@@ -33,7 +34,7 @@ munch==4.0.0
 mutagen==1.47.0
 nestd==0.3.1
 ordered-set==4.1.0
-orjson==3.10.6
+orjson==3.9.15
 packaging==24.1
 pfzy==0.3.4
 prompt_toolkit==3.0.48
@@ -45,6 +46,7 @@ pydantic_core==2.20.1
 Pygments==2.18.0
 pyinstaller-hooks-contrib==2024.8
 PyJWT==2.9.0
+python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
 python-multipart==0.0.9
 pytz==2024.1
