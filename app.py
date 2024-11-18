@@ -24,7 +24,6 @@ app.inject_global(downloadinfo={"Nothing":"N/A"})
 
 utils.initapp(app)
 
-logger.warning(app.dependencies.__dict__)
 
 @app.startup_handler
 async def startup_handler():
