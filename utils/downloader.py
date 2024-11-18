@@ -5,7 +5,7 @@ from loguru import logger
 import sys
 
 from .config import config
-from robyn import Robyn
+from robyn import Robyn, jsonify
 
 
 
@@ -14,10 +14,6 @@ class robyn:
     @classmethod
     def __init__(cls, app: Robyn):
         cls.robyn = app.dependencies.__dict__["global_dependency_map"]
-        cls.robyn["starttime"] = "YIPPEEE"
-        logger.error(cls.robyn["starttime"])
-
-        
 
 try:
     def debug_init(trace, debug):
@@ -84,7 +80,8 @@ try:
         PostProcessorStarted = None
         Album = None
         downloading = False
-
+        speed = None
+        
         def __init__(
             self, host: Optional[str] = None,
             download_path: Optional[str] = 'downloads/',
@@ -107,8 +104,12 @@ try:
                              d["filename"]}"')  # type: ignore
                 self.StatusStarted = False  # type: ignore
                 self.filename = d['filename']  # type: ignore
-                self.time_elapse = d['elapsed']  # type: ignore
+                try:
+                    self.time_elapse = d['elapsed']  # type: ignore
+                except:
+                    pass
                 self.PostProcessorStarted = False
+                self.buildjson()
 
             if d.status == 'downloading':  # type: ignore
                 if not self.StatusStarted:
@@ -119,8 +120,18 @@ try:
                 self.filename = d['filename']  # type: ignore
                 self.percent = d['_percent_str']  # type: ignore
                 self.eta = d['_eta_str']  # type: ignore
-                self.speed = d['speed']  # type: ignore
+                try:
+                    self.time_elapse = d['elapsed']  # type: ignore
+                except Exception:
+                    pass
+                try:
+                    speed = float(d['speed']) # type: ignore
+                    self.speed = speed / (1024 * 1024)
+                except Exception:
+                    pass
+                
 
+                self.buildjson()
         def postprocessor_hooks(self, d):
 
             d = munchify(d)
@@ -131,6 +142,8 @@ try:
                 self.title = info.title  # type: ignore
                 self.download_path = info.filepath  # type: ignore
                 self.Status = 'Started'
+                self.time_elapse=0
+
                 logger.debug(f"""
                             {self.Album}
                             {self.url}
@@ -143,13 +156,14 @@ try:
                 if not self.PostProcessorStarted:
                     self.db.markVideoDownloaded(
                         playlisturl=self.playlist_url,
-                        url=self.url,  # type: ignore
+                        url=self.url,
                         title=self.title,
                         download_path=self.download_path,
                         elapsed=self.time_elapse)
 
                     self.PostProcessorStarted = True
                 self.Status = 'Finished'
+                self.buildjson()
 
         def ydl_opts(self):
 
@@ -206,7 +220,6 @@ try:
                 opts["outtmpl"] = f'downloads/{plopts}-%(title)s.%(ext)s'
             else:
                 opts["outtmpl"] = f'downloads/{plopts} - %(title)s.%(ext)s'
-            logger.error(opts)
 
             with yt_dlp.YoutubeDL(opts) as ydl:
                 self.playlist_url = url
@@ -217,18 +230,20 @@ try:
         # except Exception as e:
             # logger.error(e)
 
-        def getjson(self):
-            data = {
-                'info': {
-                    'Download_path': self.download_path,
-                    'filename': self.filename,
-                    'time_elapse': self.time_elapse,
-                    'percent': self.percent,
-                    'eta': self.eta,
-                    'url': self.playlist_url
-                },
-            }
-            return data
+        def buildjson(self):
+            buildjson: dict = {
+                "status": f"{self.Status}",
+                "Download Path": f"{self.download_path}",
+                "filename": f"{self.filename}",
+                "Percent": f"{self.percent}",
+                "url": f"{self.url}",
+                "Album": f"{self.Album}",
+                "Elapsed": f"{self.time_elapse}",
+                "Speed": f"{self.speed}",
+                "eta": f"{self.eta}"}
+            robyn.robyn["downloadinfo"] = buildjson
+
+
 
 
 except Exception as e:
