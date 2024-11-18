@@ -2,9 +2,8 @@ name: Master Docker CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "dev" ]
   workflow_dispatch:
-
 
 jobs:
   push_to_registry:
@@ -42,7 +41,7 @@ jobs:
         id: set_lowercase_repo
         run: echo "repo_lowercase=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
-      - name: Build and push Docker image
+      - name: Build and push multi-architecture Docker image
         uses: docker/build-push-action@v6.8.0
         with:
           context: .
@@ -50,5 +49,32 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ env.repo_lowercase }}:${{ env.VERSION }}
-            ghcr.io/${{ env.repo_lowercase }}:latest
+            ghcr.io/${{ env.repo_lowercase }}:${{ github.ref_name }}
+            ghcr.io/${{ env.repo_lowercase }}:nightly
           labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+
+      - name: Build and push Docker image for dev branch (if applicable)
+        if: github.ref == 'refs/heads/dev'
+        uses: docker/build-push-action@v6.8.0
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.repo_lowercase }}:dev
+            ghcr.io/${{ env.repo_lowercase }}:${{ env.VERSION }}-dev
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+
+      - name: Push `latest` tag (only on master branch)
+        if: github.ref == 'refs/heads/master'
+        uses: docker/build-push-action@v6.8.0
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ghcr.io/${{ env.repo_lowercase }}:latest
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+
