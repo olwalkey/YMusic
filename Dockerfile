@@ -4,7 +4,7 @@ WORKDIR /workspace
 
 COPY . .
 
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+RUN pip install --no-cache-dir --upgrade -r server-requirements.txt
 
 
 EXPOSE 8080
