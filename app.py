@@ -52,8 +52,10 @@ async def get_server_info(global_dependencies):
     How many songs have been downloaded
     """
     uptime = datetime.now() - global_dependencies['starttime']
+    with open("version") as f:
+        version = f.readline()
     return jsonify({
-        "app_version": "idk bro",
+        "app_version": version,
         "uptime": f"{uptime}",
         "versions": {
             "Robyn": robynversion,
