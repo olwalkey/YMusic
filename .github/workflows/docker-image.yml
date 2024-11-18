@@ -33,6 +33,9 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
 
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Create nightly tag
         id: create_nightly_tag
         run: echo "NIGHTLY_TAG=nightly" >> $GITHUB_ENV
