@@ -5,6 +5,7 @@ from robyn.types import PathParams
 from datetime import datetime
 
 from loguru import logger
+import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 
 
@@ -14,6 +15,18 @@ from alembic import __version__ as alembicversion
 from yt_dlp.version import __version__ as ytversion
 import utils
 
+#logging.basicConfig(level=logging.ERROR)
+#logger = logging.getLogger('apscheduler')
+#logger.setLevel(logging.ERROR)
+
+
+apscheduler_logger = logging.getLogger('apscheduler')
+apscheduler_logger.setLevel(logging.ERROR)
+handler = logging.StreamHandler()
+handler.setLevel(logging.ERROR) 
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+apscheduler_logger.addHandler(handler)
 
 app = Robyn(__file__)
 
@@ -21,7 +34,7 @@ startTime = datetime.now()
 app.inject_global(starttime=startTime)
 
 app.inject_global(downloadinfo={"Nothing":"N/A"})
-
+utils.migrateDb()
 utils.initapp(app)
 
 
@@ -35,11 +48,9 @@ async def startup_handler():
 
 def scanDatabase():
     next_item = utils.interaction.fetchNextItem()
-    logger.info(next_item)
+    logger.trace(next_item)
     if next_item is not None:
         utils.youtube.start_download(next_item[2])
-
-
 
 
 @app.get("/info")
