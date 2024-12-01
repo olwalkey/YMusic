@@ -1,9 +1,9 @@
-from sqlalchemy import except_, select, update
+from sqlalchemy import except_, insert, select, update
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
 from sqlalchemy.exc import DuplicateColumnError, DBAPIError, OperationalError
 from urllib.parse import urlparse, parse_qs
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine, async_sessionmaker
 
 from typing import TypedDict
 
@@ -16,7 +16,6 @@ from loguru import logger
 from .config import config
 
 from . import models as Tables
-from .models import Base
 
 
 class DBInfo(TypedDict):
@@ -90,6 +89,7 @@ class interactions:
                     pool_timeout=30,
                     echo=True,
                 )
+            cls.AsyncSession = async_sessionmaker(cls.engine, class_=AsyncSession, expire_on_commit=False)
 
 
         except Exception as e:
@@ -101,14 +101,28 @@ class interactions:
 
         return cls.engine
 
+    @classmethod
+    async def disconnect(cls) -> int:
+        try:
+            await cls.engine.dispose()
+            return 1
+        except Exception as e:
+            return 0
+
 
     @classmethod
-    async def reconnect(cls) -> None:
+    async def reconnect(cls) -> int:
         """
             Attempts to reconnect to the database if testcon fails
             ---
         """
-        pass
+        try:
+            await cls.disconnect()
+            await cls.connect()
+            return 1
+        except Exception as e:
+            logger.error(e)
+            return 0
 
     @classmethod
     async def testcon(cls) -> int:
@@ -121,24 +135,40 @@ class interactions:
 
         try:
             async with cls.engine.connect() as connection:
-                return 1
+                return 0
         except Exception as e:
             print("Connection failed:", str(e))
-            return 0
+            return 1
 
     @classmethod
-    async def createEntry(cls) -> None:
+    async def createEntry(
+        cls,
+        uri: str
+    ) -> dict[str, dict[str, str]]:
         """
             Creates a new entry in the requests table to download once it's called in queue
             ---
         """
-        pass
+        async with cls.AsyncSession() as session:
+            new_entry = Tables.Requests(url=uri)
+            session.add(new_entry)
+            await session.commit()
+            await session.refresh(new_entry)
+            logger.trace(f"New Request with ID: {new_entry.id}")
+
+            return {
+                    'data': {
+                    'message': f'New request with ID: {new_entry.id} has been created',
+                    'error': "None"
+                }
+            }
+
 
 
     @classmethod
     async def fetchNextItem(cls) -> None:
         """
-            Fetches next eligible item for download from the datbase
+            Fetches next eligible item for download from the database
             ---
         """
         pass
