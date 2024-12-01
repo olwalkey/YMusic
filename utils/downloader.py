@@ -81,7 +81,7 @@ try:
         Album = None
         downloading = False
         speed = None
-        
+
         def __init__(
             self, host: Optional[str] = None,
             download_path: Optional[str] = 'downloads/',
@@ -117,6 +117,7 @@ try:
                                  d["filename"]}"')  # type: ignore
                     self.StatusStarted = True
 
+                self.Status = 'Downloading'
                 self.filename = d['filename']  # type: ignore
                 self.percent = d['_percent_str']  # type: ignore
                 self.eta = d['_eta_str']  # type: ignore
@@ -129,7 +130,7 @@ try:
                     self.speed = speed / (1024 * 1024)
                 except Exception:
                     pass
-                
+
 
                 self.buildjson()
         def postprocessor_hooks(self, d):
@@ -227,8 +228,7 @@ try:
                 self.db.markPlaylistDownloaded(
                     self.playlist_url, self.Album, self.extractor)
 
-        # except Exception as e:
-            # logger.error(e)
+
 
         def buildjson(self):
             buildjson: dict = {
