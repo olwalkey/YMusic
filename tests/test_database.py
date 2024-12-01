@@ -1,6 +1,5 @@
 import pytest
 import time
-import pytest_docker
 from sqlalchemy.ext.asyncio import AsyncEngine
 from loguru import logger
 
@@ -8,29 +7,9 @@ from utils.db import interactions, DBTypes
 from utils import migrateDb
 
 
-#@pytest.fixture(scope='session')
-#def docker_postgres(docker_services):
-#    docker_services.start('postgresql')
-#    public_port = docker_services.wait_for_service("postgresql", 5432)
-#    url = "http://{docker_services.docker_ip}:{public_port}".format(**locals())
-#    return url
-#
-#@pytest.fixture(scope='session')
-#def docker_mysql(docker_services):
-#    docker_services.start('mysql')
-#    public_port = docker_services.wait_for_service("mysql", 3306)
-#    dsn = "{docker_services.docker_ip}:{public_port}".format(**locals())
-#    return dsn
-#
-#
-#@pytest.fixture(scope='session')
-#def docker_maria(docker_services):
-#    docker_services.start('mysql')
-#    public_port = docker_services.wait_for_service("mariadb", 3306)
-#    shit = {"ip": docker_services.docker_ip, "port": docker_services}
-#    logger.error(shit)
-#    return shit
-
+# NOTE: All tests that are purely reliant on sqlalchemy and not external lib's will be using postgresql
+# As I don't think it's required to test it for postgres, mysql, maria, and sqlite. if it works in posstgres
+# It will work in the others. It's not rocket science
 
 @pytest.mark.asyncio
 @pytest.mark.run()
@@ -44,8 +23,25 @@ async def test_connect():
 
 @pytest.mark.asyncio
 @pytest.mark.run()
+async def test_disconnect():
+    interaction = interactions()
+
+    await interaction.setEnginetype(DBTypes.postgresql)
+    await interaction.setUsername("default")
+    await interaction.setUsername("default")
+    await interaction.connect()
+    disc = await interaction.disconnect()
+    assert disc == 1
+
+@pytest.mark.asyncio
+@pytest.mark.run()
+async def test_reconnect():
+    pass
+
+@pytest.mark.asyncio
+@pytest.mark.run()
 async def test_testcon():
-    
+
     interaction = interactions()
 
     await interaction.setEnginetype(DBTypes.postgresql)
@@ -125,24 +121,49 @@ async def test_postgres():
     pass
 
 @pytest.mark.asyncio
-async def test_createEntry():
+@pytest.mark.run(order=99)
+async def test_fetchNextItemEmpty():
     pass
 
+
 @pytest.mark.asyncio
+@pytest.mark.run(order=100)
+async def test_createPlaylistEntry():
+    interaction = interactions()
+    await interaction.setEnginetype(DBTypes.postgresql)
+    
+    await interaction.setUsername("default")
+    await interaction.setUsername("default")
+
+    await interaction.connect()
+    
+    myassr = await interaction.createEntry("OLAK5uy_nwrFWHHh1oNbygnCMaRFwhw5o8BtIYxLk")
+    assert myassr == {
+                    'data': {
+                    'message': f'New request with ID: 1 has been created',
+                    'error': "None"
+                }
+            }
+
+@pytest.mark.asyncio
+@pytest.mark.run(order=100)
+async def test_createVideoEntry():
+    interaction = interactions()
+    await interaction.setUsername("default")
+    await interaction.setUsername("default")
+
+    await interaction.setEnginetype(DBTypes.postgresql)
+    await interaction.connect()
+
+@pytest.mark.asyncio
+@pytest.mark.run(order=101)
 async def test_duplicateEntry():
     pass
 
 @pytest.mark.asyncio
+@pytest.mark.run(order=102)
 async def test_fetchNextItem():
     pass
 
-@pytest.mark.asyncio
-@pytest.mark.run(order=100)
-async def test_reconnect():
-    pass
 
-@pytest.mark.asyncio
-@pytest.mark.run(order=101)
-async def test_disconnect():
-    pass
 
