@@ -18,10 +18,14 @@ def migrateDb(
     alembic_cfg = Config()
     alembic_cfg.set_main_option("script_location", "utils/alembic")
     alembic_cfg.set_main_option("prepend_sys_path", ".")
-    if not engineType['database'] == "sqlite":
+
+
+    if not engineType['database'] in ["sqlite", "mysql", "mariadb"]:
         alembic_cfg.set_main_option("sqlalchemy.url", f'{engineType["database"]}://{username}:{password}@{host}:{port}/{database}')
+    elif engineType['database'] not in ["postgres", "sqlite"]:
+        alembic_cfg.set_main_option("sqlalchemy.url", f'{engineType["database"]}+pymysql://{username}:{password}@{host}:{port}/{database}')
     else:
-        alembic_cfg.set_main_option("sqlalchemy.url", f'{engineType["database"]}:///{database}')
+        alembic_cfg.set_main_option("sqlalchemy.url", f'{engineType["database"]}:///{database}.sqlite')
 
     try:
         command.ensure_version(alembic_cfg)
