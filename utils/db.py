@@ -140,7 +140,7 @@ class interactions:
                 logger.error(connection)
                 return 1
         except Exception as e:
-            print("Connection failed:", str(e))
+            logger.error(f"Connection failed: {str(e)}")
             return 0
 
     @classmethod
