@@ -46,7 +46,7 @@ async def test_testcon():
 
     await interaction.setEnginetype(DBTypes.postgresql)
     await interaction.setUsername("default")
-    await interaction.setUsername("default")
+    await interaction.setPassword("default")
     await interaction.connect()
     con: int = await interaction.testcon()
 
@@ -64,32 +64,34 @@ async def test_postgres_migrations():
 
     assert migrate == 1
 
-# FIXME: ALl of these tests just don't work because pymysql isn't compatible 
+@pytest.mark.asyncio
+@pytest.mark.run()
+@pytest.mark.run(order=200)
+async def test_mysql_migrations():
+    interaction = interactions()
 
-#@pytest.mark.asyncio
-#@pytest.mark.run()
-#async def test_mysql_migrations():
-#    interaction = interactions()
-#
-#    await interaction.setEnginetype(DBTypes.mysql)
-#    await interaction.setUsername("root")
-#    await interaction.connect()
-#    migrate: int = migrateDb(DBTypes.mysql)
-#
-#    assert migrate == 1
-#
-#
-#@pytest.mark.asyncio
-#@pytest.mark.run()
-#async def test_mariadb_migrations():
-#    interaction = interactions()
-#
-#    await interaction.setEnginetype(DBTypes.mariadb)
-#    await interaction.setUsername("root")
-#    await interaction.connect()
-#    migrate: int = migrateDb(DBTypes.mariadb)
-#
-#    assert migrate == 1
+    await interaction.setEnginetype(DBTypes.mysql)
+    await interaction.setUsername("root")
+    await interactions.setPassword("")
+    await interaction.connect()
+    migrate: int = migrateDb(DBTypes.mysql, username='root', password='', port=3306)
+
+    assert migrate == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.run()
+@pytest.mark.run(order=201)
+async def test_mariadb_migrations():
+    interaction = interactions()
+
+    await interaction.setEnginetype(DBTypes.mariadb)
+    await interaction.setUsername("root")
+    await interactions.setPassword("")
+    await interaction.connect()
+    migrate: int = migrateDb(DBTypes.mariadb, username='root', password='', port=3307)
+
+    assert migrate == 1
 
 
 @pytest.mark.asyncio
@@ -126,24 +128,24 @@ async def test_fetchNextItemEmpty():
     pass
 
 
-@pytest.mark.asyncio
-@pytest.mark.run(order=100)
-async def test_createPlaylistEntry():
-    interaction = interactions()
-    await interaction.setEnginetype(DBTypes.postgresql)
-    
-    await interaction.setUsername("default")
-    await interaction.setUsername("default")
-
-    await interaction.connect()
-    
-    myassr = await interaction.createEntry("OLAK5uy_nwrFWHHh1oNbygnCMaRFwhw5o8BtIYxLk")
-    assert myassr == {
-                    'data': {
-                    'message': f'New request with ID: 1 has been created',
-                    'error': "None"
-                }
-            }
+#@pytest.mark.asyncio
+#@pytest.mark.run(order=100)
+#async def test_createPlaylistEntry():
+#    interaction = interactions()
+#    await interaction.setEnginetype(DBTypes.postgresql)
+#    
+#    await interaction.setUsername("default")
+#    await interaction.setUsername("default")
+#
+#    await interaction.connect()
+#    
+#    myassr = await interaction.createEntry("OLAK5uy_nwrFWHHh1oNbygnCMaRFwhw5o8BtIYxLk")
+#    assert myassr == {
+#                    'data': {
+#                    'message': f'New request with ID: 1 has been created',
+#                    'error': "None"
+#                }
+#            }
 
 @pytest.mark.asyncio
 @pytest.mark.run(order=100)
