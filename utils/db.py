@@ -21,13 +21,14 @@ from . import models as Tables
 class DBInfo(TypedDict):
     database: str
     driver: str
+    port: int
 
 
 class DBTypes():
-    postgresql: DBInfo = {"database": "postgresql", "driver": "asyncpg"}
-    mysql: DBInfo = {"database": "mysql", "driver": "aiomysql"}
-    mariadb: DBInfo = {"database": "mysql", "driver": "aiomysql"}
-    sqlite: DBInfo = {"database": "sqlite", "driver": "aiosqlite"}
+    postgresql: DBInfo = {"database": "postgresql", "driver": "asyncpg", "port": 5432}
+    mysql: DBInfo = {"database": "mysql", "driver": "aiomysql", "port": 3306}
+    mariadb: DBInfo = {"database": "mysql", "driver": "aiomysql", "port": 3306}
+    sqlite: DBInfo = {"database": "sqlite", "driver": "aiosqlite", "port": 0}
 
 
 
@@ -36,8 +37,8 @@ class interactions:
     engine: AsyncEngine
     engineType: DBInfo = DBTypes.postgresql
 
-    username: str = "postgres"
-    password: str = "supersecurepass"
+    username: str = "default"
+    password: str = "default"
     host: str = "localhost"
     port: int = 5432
     database: str = "youtube"
@@ -107,6 +108,7 @@ class interactions:
             await cls.engine.dispose()
             return 1
         except Exception as e:
+            logger.error(e)
             return 0
 
 
@@ -135,10 +137,11 @@ class interactions:
 
         try:
             async with cls.engine.connect() as connection:
-                return 0
+                logger.error(connection)
+                return 1
         except Exception as e:
             print("Connection failed:", str(e))
-            return 1
+            return 0
 
     @classmethod
     async def createEntry(
@@ -153,7 +156,6 @@ class interactions:
             new_entry = Tables.Requests(url=uri)
             session.add(new_entry)
             await session.commit()
-            await session.refresh(new_entry)
             logger.trace(f"New Request with ID: {new_entry.id}")
 
             return {

@@ -31,10 +31,10 @@ try:
 
     if __name__ != '__main__':
         try:
-            from . import interaction as interactions
+            from . import interactions as interactions
         except ImportError:
             try:
-                from . import interaction as interactions
+                from . import interactions as interactions
             except Exception as e:
                 logger.error('Failed to import db')
                 logger.error(e)
@@ -195,7 +195,7 @@ try:
             }
             return ydl_opts
 
-        def start_download(self, url):
+        def startDownload(self, url):
             """Start Download using a url """
             # try:
             logger.info(f'begin download for {url}')

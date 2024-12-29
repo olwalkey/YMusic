@@ -5,7 +5,7 @@ from robyn import Robyn
 from .config import config
 from loguru import logger
 
-#from .downloader import Downloader, robyn
+from .downloader import Downloader, robyn
 
 def migrateDb(
     engineType: DBInfo,
@@ -19,13 +19,14 @@ def migrateDb(
     alembic_cfg.set_main_option("script_location", "utils/alembic")
     alembic_cfg.set_main_option("prepend_sys_path", ".")
 
-
     if not engineType['database'] in ["sqlite", "mysql", "mariadb"]:
         alembic_cfg.set_main_option("sqlalchemy.url", f'{engineType["database"]}://{username}:{password}@{host}:{port}/{database}')
     elif engineType['database'] not in ["postgres", "sqlite"]:
         alembic_cfg.set_main_option("sqlalchemy.url", f'{engineType["database"]}+pymysql://{username}:{password}@{host}:{port}/{database}')
     else:
         alembic_cfg.set_main_option("sqlalchemy.url", f'{engineType["database"]}:///{database}.sqlite')
+
+    logger.debug(alembic_cfg.get_main_option("sqlalchemy.url"))
 
     try:
         command.ensure_version(alembic_cfg)
@@ -35,13 +36,13 @@ def migrateDb(
         logger.error(e)
         return 0
 
-#interaction = interactions()
+interaction = interactions()
 #interaction.connect()
 
 
 
-#def initapp(app: Robyn):
-    #robyn(app)
+async def initapp(app: Robyn):
+    robyn(app)
 
 
-#youtube = Downloader()
+youtube = Downloader()
