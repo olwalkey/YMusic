@@ -6,7 +6,7 @@ from datetime import datetime
 
 from loguru import logger
 import logging
-from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 
 from robyn import __version__ as robynversion
@@ -14,6 +14,7 @@ from sqlalchemy import __version__ as alchversion
 from alembic import __version__ as alembicversion
 from yt_dlp.version import __version__ as ytversion
 import utils
+from utils.db import interactions
 
 #logging.basicConfig(level=logging.ERROR)
 #logger = logging.getLogger('apscheduler')
@@ -21,9 +22,9 @@ import utils
 
 
 apscheduler_logger = logging.getLogger('apscheduler')
-apscheduler_logger.setLevel(logging.ERROR)
+apscheduler_logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler()
-handler.setLevel(logging.ERROR) 
+handler.setLevel(logging.DEBUG) 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 apscheduler_logger.addHandler(handler)
@@ -34,23 +35,27 @@ startTime = datetime.now()
 app.inject_global(starttime=startTime)
 
 app.inject_global(downloadinfo={"Nothing":"N/A"})
-utils.migrateDb()
-utils.initapp(app)
+#utils.initapp(app)
 
 
 @app.startup_handler
 async def startup_handler():
-    scheduler = BackgroundScheduler()
+    try:
+        await interactions.connect()
+        await utils.initapp(app)
+        scheduler = AsyncIOScheduler()
 
-    scheduler.add_job(scanDatabase, 'interval', seconds=5)
-    scheduler.start()
+        scheduler.add_job(scanDatabase, 'interval', seconds=5)
+        scheduler.start()
+    except Exception as e:
+        logger.error(e)
+        logger.error("Failed to Start")
 
-
-def scanDatabase():
-    next_item = utils.interaction.fetchNextItem()
+async def scanDatabase():
+    next_item = await utils.interactions.fetchNextItem()
     logger.trace(next_item)
     if next_item is not None:
-        utils.youtube.start_download(next_item[2])
+        utils.youtube.startDownload(next_item[2])
 
 
 @app.get("/info")
@@ -68,6 +73,8 @@ async def get_server_info(global_dependencies):
     return jsonify({
         "app_version": version,
         "uptime": f"{uptime}",
+        "DownloadedItems": "WIP",
+        "RegisteredUsers": "WIP",
         "versions": {
             "Robyn": robynversion,
             "Yt-DLP": ytversion,
@@ -97,8 +104,15 @@ async def get_latest_downloads(request, path_params: PathParams):
 @app.get("/ping")
 async def ping(request):
 
-    return jsonify({"ping": "pong!"})
+    with open("version") as f:
+        version = f.readline()
+    return jsonify(
+        {
+            "ping": "pong!",
+            "version": version,
+         }
 
+    )
 
 
 
@@ -106,10 +120,8 @@ async def ping(request):
 async def download(request, path_params: PathParams):
     """Takes a url and downloads the supplied video/song/playlist"""
     url: str = path_params['url']
-
-    return utils.interaction.createEntry(url)
-
-
+    logger.error(url)
+    return await utils.interactions.createEntry(url)
 
 
 @app.post("/login")
@@ -121,8 +133,6 @@ async def login():
 async def register():
     """Register a new user and add them to the database"""
     pass
-
-
 
 
 
