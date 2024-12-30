@@ -8,7 +8,12 @@ services:
       POSTGRES_DB: youtube
     ports:
       - "5432:5432"
-
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "default", "-d", "youtube"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+      start_period: 30s
 
   mysql:
     container_name: mysql
@@ -19,12 +24,16 @@ services:
       MYSQL_USER: default
       MYSQL_PASSWORD: default
       MYSQL_DATABASE: youtube
-
     ports:
       - "3306:3306" 
     volumes:
       - ./tests/mysql-init:/docker-entrypoint-initdb.d
-
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+      start_period: 30s
 
   mariadb:
     container_name: mariadb
@@ -37,7 +46,11 @@ services:
       MARIADB_DATABASE: youtube
     volumes:
       - ./tests/mysql-init:/docker-entrypoint-initdb.d
-
-
     ports:
       - "3307:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 5
