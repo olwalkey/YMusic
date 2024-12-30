@@ -1,5 +1,4 @@
 import pytest
-import time
 from sqlalchemy.ext.asyncio import AsyncEngine
 from loguru import logger
 
@@ -175,7 +174,19 @@ async def test_duplicateEntry():
 @pytest.mark.asyncio
 @pytest.mark.run(order=102)
 async def test_fetchNextItemPopulated():
-    pass
+    from utils.models import Requests
+    interaction = interactions()
+
+    await interaction.setEnginetype(DBTypes.postgresql)
+    await interaction.setUsername("default")
+    await interaction.setPassword("default")
+    await interaction.connect()
+
+    item:Requests = await interaction.fetchNextItem()
+
+    assert isinstance(item, Requests), f"Expected type 'Tables.Requests' but got {type(item)})"
+    assert item.id == 1 # type: ignore
+
 
 
 
