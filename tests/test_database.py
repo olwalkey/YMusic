@@ -55,6 +55,7 @@ async def test_testcon():
 
 @pytest.mark.asyncio
 @pytest.mark.run()
+@pytest.mark.run(order=5)
 async def test_postgres_migrations():
     interaction = interactions()
 
@@ -66,7 +67,7 @@ async def test_postgres_migrations():
 
 @pytest.mark.asyncio
 @pytest.mark.run()
-@pytest.mark.run(order=200)
+@pytest.mark.run(order=6)
 async def test_mysql_migrations():
     interaction = interactions()
 
@@ -81,7 +82,7 @@ async def test_mysql_migrations():
 
 @pytest.mark.asyncio
 @pytest.mark.run()
-@pytest.mark.run(order=201)
+@pytest.mark.run(order=7)
 async def test_mariadb_migrations():
     interaction = interactions()
 
@@ -96,6 +97,7 @@ async def test_mariadb_migrations():
 
 @pytest.mark.asyncio
 @pytest.mark.run()
+@pytest.mark.run(order=8)
 async def test_sqlite_migrations():
     interaction = interactions()
 
@@ -107,52 +109,45 @@ async def test_sqlite_migrations():
 
 
 @pytest.mark.asyncio
-async def test_sqlite():
-    pass
-
-@pytest.mark.asyncio
-async def test_mysql():
-    pass
-
-@pytest.mark.asyncio
-async def test_mariadb():
-    pass
-
-@pytest.mark.asyncio
-async def test_postgres():
-    pass
-
-@pytest.mark.asyncio
 @pytest.mark.run(order=99)
 async def test_fetchNextItemEmpty():
-    pass
+    from utils.models import Requests
+    interaction = interactions()
 
+    await interaction.setEnginetype(DBTypes.postgresql)
+    await interaction.setUsername("default")
+    await interaction.setPassword("default")
+    await interaction.connect()
 
-#@pytest.mark.asyncio
-#@pytest.mark.run(order=100)
-#async def test_createPlaylistEntry():
-#    interaction = interactions()
-#    await interaction.setEnginetype(DBTypes.postgresql)
-#    
-#    await interaction.setUsername("default")
-#    await interaction.setUsername("default")
-#
-#    await interaction.connect()
-#    
-#    myassr = await interaction.createEntry("OLAK5uy_nwrFWHHh1oNbygnCMaRFwhw5o8BtIYxLk")
-#    assert myassr == {
-#                    'data': {
-#                    'message': f'New request with ID: 1 has been created',
-#                    'error': "None"
-#                }
-#            }
+    item:Requests = await interaction.fetchNextItem()
+
+    assert item == None
+
+@pytest.mark.asyncio
+@pytest.mark.run(order=100)
+async def test_createPlaylistEntry():
+    interaction = interactions()
+    await interaction.setEnginetype(DBTypes.postgresql)
+    
+    await interaction.setUsername("default")
+    await interaction.setPassword("default")
+
+    await interaction.connect()
+    
+    myassr = await interaction.createEntry("OLAK5uy_nwrFWHHh1oNbygnCMaRFwhw5o8BtIYxLk")
+    assert myassr == {
+                    'data': {
+                    'message': f'New request with ID: 1 has been created',
+                    'error': "None"
+                }
+            }
 
 @pytest.mark.asyncio
 @pytest.mark.run(order=100)
 async def test_createVideoEntry():
     interaction = interactions()
     await interaction.setUsername("default")
-    await interaction.setUsername("default")
+    await interaction.setPassword("default")
 
     await interaction.setEnginetype(DBTypes.postgresql)
     await interaction.connect()
@@ -160,11 +155,26 @@ async def test_createVideoEntry():
 @pytest.mark.asyncio
 @pytest.mark.run(order=101)
 async def test_duplicateEntry():
-    pass
+    interaction = interactions()
+    await interaction.setEnginetype(DBTypes.postgresql)
+
+    await interaction.setUsername("default")
+    await interaction.setPassword("default")
+
+    await interaction.connect()
+
+    myassr = await interaction.createEntry("OLAK5uy_nwrFWHHh1oNbygnCMaRFwhw5o8BtIYxLk")
+    logger.error(myassr)
+    assert myassr == {
+                'data':{
+                    'message': f'Duplicate Entry. Link already exists',
+                    'error': '3000',
+                }}
+
 
 @pytest.mark.asyncio
 @pytest.mark.run(order=102)
-async def test_fetchNextItem():
+async def test_fetchNextItemPopulated():
     pass
 
 

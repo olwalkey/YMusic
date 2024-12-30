@@ -1,7 +1,8 @@
 from sqlalchemy import except_, insert, select, update
+import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import func
-from sqlalchemy.exc import DuplicateColumnError, DBAPIError, OperationalError
+from sqlalchemy.exc import DuplicateColumnError, DBAPIError, IntegrityError, OperationalError
 from urllib.parse import urlparse, parse_qs
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine, async_sessionmaker
 
@@ -152,28 +153,65 @@ class interactions:
             Creates a new entry in the requests table to download once it's called in queue
             ---
         """
-        async with cls.AsyncSession() as session:
-            new_entry = Tables.Requests(url=uri)
-            session.add(new_entry)
-            await session.commit()
-            logger.trace(f"New Request with ID: {new_entry.id}")
+        try:
+            async with cls.AsyncSession() as session:
+                new_entry = Tables.Requests(url=uri)
+                session.add(new_entry)
+                await session.commit()
+                logger.trace(f"New Request with ID: {new_entry.id}")
 
+                return {
+                        'data': {
+                        'message': f'New request with ID: {new_entry.id} has been created',
+                        'error': "None"
+                    }
+                }
+        except DuplicateColumnError as e:
             return {
-                    'data': {
-                    'message': f'New request with ID: {new_entry.id} has been created',
-                    'error': "None"
+                'data':{
+                    'message': f'Duplicate Entry. Link already exists',
+                    'error': '3000',
+                    #'errorlog': str(e)
+                }
+            }
+        except IntegrityError as e:
+            return {
+                'data':{
+                    'message': f'Duplicate Entry. Link already exists',
+                    'error': '3000',
+                    #'errorlog': str(e)
                 }
             }
 
 
 
+
     @classmethod
-    async def fetchNextItem(cls) -> None:
+    async def fetchNextItem(cls) -> Tables.Requests | None:
         """
             Fetches next eligible item for download from the database
             ---
         """
-        pass
+        query = (
+            select(Tables.Requests)
+            .where(Tables.Requests.queue_status == 'queued')
+            .order_by(Tables.Requests.id.asc())
+            .limit(1)
+        )
+        try:
+            async with cls.AsyncSession() as session:
+                result = await session.execute(query)
+                logger.error(result)
+                item: Tables.Requests = result.scalar_one_or_none()
+                logger.error(item)
+                if isinstance(item, Tables.Requests):
+                    return item
+                else:
+                    raise KeyError
+        except Exception as e:
+            logger.error(f"Failed to fetch next item {e}")
+            return None
+
 
     @classmethod
     async def newDownloaded(cls) -> None:
