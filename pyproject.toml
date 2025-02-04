@@ -1,0 +1,7 @@
+[project]
+name = "YMusic"
+version = "4.0.0-beta"
+description = "A Youtube Downloader webserver created using yt-dlf and Robyn"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []

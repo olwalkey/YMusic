@@ -1,0 +1,7 @@
+version = 1
+requires-python = ">=3.12"
+
+[[package]]
+name = "ymusic"
+version = "4.0.0b0"
+source = { virtual = "." }
