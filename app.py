@@ -35,7 +35,7 @@ startTime = datetime.now()
 app.inject_global(starttime=startTime)
 
 app.inject_global(downloadinfo={"Nothing":"N/A"})
-#utils.initapp(app)
+utils.initapp(app)
 
 
 @app.startup_handler
