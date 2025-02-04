@@ -6,6 +6,7 @@ from loguru import logger
 
 
 class DbConfig(BaseModel):
+    engine: str
     host: str
     port: int
     db: str

@@ -4,16 +4,19 @@ port: 5000
 username: default
 password: default
 
-debug: False
-trace: False
+debug: True
+trace: True
 
 ratelimit: 2000000 #KiloBytes
 restrictfilenames: True
 
+
+
 db:
+  engine: Postgres # Postgres, sqlite, mysql, mariadb
   host: localhost
   port: 5432
   db: youtube
-  user: postgres
-  password: Testpass
+  user: default
+  password: default
   timezone: America/Los_Angeles
