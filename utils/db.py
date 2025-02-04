@@ -41,13 +41,13 @@ class interactions:
     username: str = "default"
     password: str = "default"
     host: str = "localhost"
-    port: int = 5432
+    port: int = 0
     database: str = "youtube"
-    
+
     @classmethod
     async def setEnginetype(cls, etype: DBInfo):
         cls.engineType = etype
-    
+
     @classmethod
     async def setUsername(cls, username) -> None:
         cls.username = username
@@ -74,6 +74,8 @@ class interactions:
             Connects to the database and persist a connection using a connection pool
             ---
         """
+        if cls.port == 0:
+            cls.port = cls.engineType["port"]
         try:
             if not cls.engineType['database'] == "sqlite":
                 cls.engine = create_async_engine(
@@ -82,15 +84,17 @@ class interactions:
                     max_overflow=10,
                     pool_timeout=30,
                     echo=True,
+                    pool_pre_ping=True,
                 )
+
             else:
                 cls.engine = create_async_engine(
                     url=f"{cls.engineType['database']}+{cls.engineType['driver']}:///{cls.database}.sqlite",
-                    pool_size=10,
-                    max_overflow=10,
-                    pool_timeout=30,
                     echo=True,
+                    pool_pre_ping=True,
                 )
+
+
             cls.AsyncSession = async_sessionmaker(cls.engine, class_=AsyncSession, expire_on_commit=False)
 
 
@@ -170,16 +174,14 @@ class interactions:
             return {
                 'data':{
                     'message': f'Duplicate Entry. Link already exists',
-                    'error': '3000',
-                    #'errorlog': str(e)
+                    'error': '3000'
                 }
             }
         except IntegrityError as e:
             return {
                 'data':{
                     'message': f'Duplicate Entry. Link already exists',
-                    'error': '3000',
-                    #'errorlog': str(e)
+                    'error': '3000'
                 }
             }
 

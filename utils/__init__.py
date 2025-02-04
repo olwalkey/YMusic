@@ -23,8 +23,10 @@ def migrateDb(
         alembic_cfg.set_main_option("sqlalchemy.url", f'{engineType["database"]}://{username}:{password}@{host}:{port}/{database}')
     elif engineType['database'] not in ["postgres", "sqlite"]:
         alembic_cfg.set_main_option("sqlalchemy.url", f'{engineType["database"]}+pymysql://{username}:{password}@{host}:{port}/{database}')
-    else:
+    elif engineType['database'] in ['sqlite']:
         alembic_cfg.set_main_option("sqlalchemy.url", f'{engineType["database"]}:///{database}.sqlite')
+    else:
+        logger.error(f"Incorrect database type {engineType}")
 
     logger.debug(alembic_cfg.get_main_option("sqlalchemy.url"))
 
