@@ -203,10 +203,9 @@ class interactions:
         try:
             async with cls.AsyncSession() as session:
                 result = await session.execute(query)
-                logger.error(result)
                 item: Tables.Requests = result.scalar_one_or_none()
-                logger.error(item)
                 if isinstance(item, Tables.Requests):
+                    logger.trace(item)
                     return item
                 else:
                     raise KeyError
