@@ -10,8 +10,8 @@ User = "default"
 Password = "default"
 Host = "127.0.0.1"
 Port = 3306
-EngineName = "mariadb"
-EngineType = DBTypes.mariadb
+EngineName = "mysql"
+EngineType = DBTypes.mysql
 
 expect_duplicateEntry = {
     'data': {
@@ -164,4 +164,6 @@ async def test_fetchNextItemPopulated():
     assert isinstance(item, Requests), f"""Expected type 'Tables.Requests' but got {
         type(item)})"""
     assert item.id == 1
+
+
 

@@ -6,10 +6,8 @@ from utils.db import interactions, DBTypes
 from utils import migrateDb
 
 
-User = "default"
-Password = "default"
-Host = "127.0.0.1"
-EngineType = DBTypes.postgresql
+EngineName = "sqlite"
+EngineType = DBTypes.sqlite
 
 expect_duplicateEntry = {
     'data': {
@@ -17,16 +15,19 @@ expect_duplicateEntry = {
         'error': '3000',
     }}
 
+async def set_data(interaction: interactions) -> interactions:
+    
+    await interaction.setEnginetype(EngineType)
+
+    return interaction
+
 
 @pytest.mark.asyncio
 @pytest.mark.run(order=0)
 @pytest.mark.timeout(10)
 async def test_connect():
     interaction = interactions()
-
-    await interaction.setEnginetype(EngineType)
-    await interaction.setUsername(User)
-    await interaction.setUsername(Password)
+    await set_data(interaction)
 
     engine = await interaction.connect()
 
@@ -39,10 +40,8 @@ async def test_connect():
 @pytest.mark.timeout(10)
 async def test_disconnect():
     interaction = interactions()
+    await set_data(interaction)
 
-    await interaction.setEnginetype(EngineType)
-    await interaction.setUsername(User)
-    await interaction.setUsername(Password)
     await interaction.connect()
     disc = await interaction.disconnect()
     assert disc == 1
@@ -53,10 +52,8 @@ async def test_disconnect():
 @pytest.mark.timeout(10)
 async def test_reconnect():
     interaction = interactions()
+    await set_data(interaction)
 
-    await interaction.setEnginetype(EngineType)
-    await interaction.setUsername(User)
-    await interaction.setPassword(Password)
     await interactions.connect()
     recon = await interactions.reconnect()
 
@@ -69,11 +66,8 @@ async def test_reconnect():
 async def test_testcon():
 
     interaction = interactions()
+    await set_data(interaction)
 
-    await interaction.setEnginetype(EngineType)
-    await interaction.setUsername(User)
-    await interaction.setPassword(Password)
-    await interaction.setPort(5432)
     await interaction.connect()
     con: int = await interaction.testcon()
 
@@ -85,10 +79,10 @@ async def test_testcon():
 @pytest.mark.timeout(10)
 async def test_migrations():
     interaction = interactions()
+    await set_data(interaction)
 
-    await interaction.setEnginetype(EngineType)
     await interaction.connect()
-    migrate: int = migrateDb("postgres", username=User, password=Password)
+    migrate: int = migrateDb(EngineName)
 
     assert migrate == 1
 
@@ -99,10 +93,8 @@ async def test_migrations():
 async def test_fetchNextItemEmpty():
     from utils.models import Requests
     interaction = interactions()
+    await set_data(interaction)
 
-    await interaction.setEnginetype(EngineType)
-    await interaction.setUsername(User)
-    await interaction.setPassword(Password)
     await interaction.connect()
 
     item: Requests = await interaction.fetchNextItem()
@@ -114,10 +106,7 @@ async def test_fetchNextItemEmpty():
 @pytest.mark.run(order=5)
 async def test_createPlaylistEntry():
     interaction = interactions()
-    await interaction.setEnginetype(EngineType)
-    await interaction.setHost(Host)
-    await interaction.setUsername(User)
-    await interaction.setPassword(Password)
+    await set_data(interaction)
 
     await interaction.connect()
 
@@ -134,11 +123,8 @@ async def test_createPlaylistEntry():
 @pytest.mark.run(order=6)
 async def test_createVideoEntry():
     interaction = interactions()
+    await set_data(interaction)
 
-    await interaction.setUsername(User)
-    await interaction.setPassword(Password)
-
-    await interaction.setEnginetype(EngineType)
     await interaction.connect()
 
 
@@ -146,11 +132,7 @@ async def test_createVideoEntry():
 @pytest.mark.run(order=30)
 async def test_duplicateEntry():
     interaction = interactions()
-    await interaction.setEnginetype(EngineType)
-
-    await interaction.setUsername(User)
-    await interaction.setPassword(Password)
-    await interaction.setPort(5432)
+    await set_data(interaction)
 
     await interaction.connect()
 
@@ -165,10 +147,7 @@ async def test_fetchNextItemPopulated():
     from utils.models import Requests
 
     interaction = interactions()
-    await interaction.setEnginetype(EngineType)
-
-    await interaction.setUsername(User)
-    await interaction.setPassword("default")
+    await set_data(interaction)
 
     await interaction.connect()
 
@@ -177,3 +156,5 @@ async def test_fetchNextItemPopulated():
     assert isinstance(item, Requests), f"""Expected type 'Tables.Requests' but got {
         type(item)})"""
     assert item.id == 1
+
+
