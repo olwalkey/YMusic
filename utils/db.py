@@ -204,11 +204,16 @@ class interactions:
             async with cls.AsyncSession() as session:
                 result = await session.execute(query)
                 item: Tables.Requests = result.scalar_one_or_none()
+                logger.debug(f"""
+                             result: {result.__dict__}
+                             item: {item}
+                """)
                 if isinstance(item, Tables.Requests):
                     logger.trace(item)
                     return item
                 else:
                     raise KeyError
+
         except Exception as e:
             logger.error(f"Failed to fetch next item {e}")
             return None
