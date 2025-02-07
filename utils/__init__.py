@@ -8,17 +8,24 @@ from loguru import logger
 from .downloader import Downloader, robyn
 
 def migrateDb(
-    engine: str = config.db.engine.capitalize(),
-    username: str = config.db.user,
-    password: str = config.db.password,
-    host: str = config.db.host,
-    port: int = config.db.port,
+    engine: str = config.db.engine.lower(),
+    username: str | None = config.db.user,
+    password: str | None = config.db.password,
+    host: str | None = config.db.host,
+    port: int | None = None,
     database: str = config.db.db
 ) -> int:
     alembic_cfg = Config()
     alembic_cfg.set_main_option("script_location", "utils/alembic")
     alembic_cfg.set_main_option("prepend_sys_path", ".")
-    engineType = getattr(DBTypes, str(engine), DBTypes.postgresql)
+    engineType = getattr(DBTypes, str(engine), None)
+    logger.debug(engineType)
+    if engineType is None:
+        logger.error(f"The Database \"{engine}\" is not compatible with this app")
+        return 0
+
+    if port is None:
+        port = engineType["port"]
     if not engineType['database'] in ["sqlite", "mysql", "mariadb"]:
         alembic_cfg.set_main_option("sqlalchemy.url", f'{engineType["database"]}://{username}:{password}@{host}:{port}/{database}')
     elif engineType['database'] not in ["postgres", "sqlite"]:
@@ -39,11 +46,10 @@ def migrateDb(
         return 0
 
 interaction = interactions()
-#interaction.connect()
 
 
 
-async def initapp(app: Robyn):
+def initapp(app: Robyn):
     migrateDb()
     robyn(app)
 
