@@ -88,8 +88,7 @@ async def test_migrations():
 
     await interaction.setEnginetype(EngineType)
     await interaction.connect()
-    migrate: int = migrateDb(
-        EngineType, username=User, password=Password)
+    migrate: int = migrateDb("postgres", username=User, password=Password)
 
     assert migrate == 1
 
