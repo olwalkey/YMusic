@@ -22,9 +22,9 @@ from utils.db import interactions
 
 
 apscheduler_logger = logging.getLogger('apscheduler')
-apscheduler_logger.setLevel(logging.DEBUG)
+apscheduler_logger.setLevel(logging.NOTSET)
 handler = logging.StreamHandler()
-handler.setLevel(logging.DEBUG) 
+handler.setLevel(logging.NOTSET) 
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 apscheduler_logger.addHandler(handler)
@@ -42,7 +42,7 @@ utils.initapp(app)
 async def startup_handler():
     try:
         await interactions.connect()
-        await utils.initapp(app)
+        utils.initapp(app)
         scheduler = AsyncIOScheduler()
 
         scheduler.add_job(scanDatabase, 'interval', seconds=5)
@@ -53,9 +53,8 @@ async def startup_handler():
 
 async def scanDatabase():
     next_item = await utils.interactions.fetchNextItem()
-    logger.trace(next_item)
     if next_item is not None:
-        utils.youtube.startDownload(next_item[2])
+        utils.youtube.startDownload(next_item.url)
 
 
 @app.get("/info")
