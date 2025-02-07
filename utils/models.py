@@ -15,7 +15,7 @@ class Requests(Base):
     queue_status = Column(
         Enum('queued', 'completed', name='queue_status'), default='queued')
     create_time = Column(TIMESTAMP, default=func.now())
-    downloaded_time = Column(TIMESTAMP, default=None)
+    download_time = Column(TIMESTAMP, default=None)
     downloaded_items = relationship(
         'Downloaded', back_populates='playlist')
 
@@ -30,6 +30,7 @@ class Downloaded(Base):
     path = Column(String)
     elapsed = Column(String)
     create_time = Column(TIMESTAMP, default=func.now())
+    download_time = Column(TIMESTAMP, default=None)
     playlist = relationship('Requests', back_populates='downloaded_items')
 
 

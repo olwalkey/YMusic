@@ -1,12 +1,12 @@
 from sqlalchemy import except_, insert, select, update
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func as sqlfunc
 from sqlalchemy.exc import DuplicateColumnError, DBAPIError, IntegrityError, OperationalError
 from urllib.parse import urlparse, parse_qs
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine, async_sessionmaker
 
-from typing import TypedDict
+from typing import Any, TypedDict
 
 from bcrypt import gensalt
 import argon2
@@ -17,6 +17,7 @@ from loguru import logger
 from .config import config
 
 from . import models as Tables
+
 
 
 class DBInfo(TypedDict):
@@ -34,7 +35,6 @@ class DBTypes():
 
 
 class interactions:
-    dbtest:int = 0
     engine: AsyncEngine
     engineType: DBInfo = DBTypes.postgresql
 
@@ -83,14 +83,14 @@ class interactions:
                     pool_size=10,
                     max_overflow=10,
                     pool_timeout=30,
-                    echo=True,
+                    echo=True if config.debug is True else False,
                     pool_pre_ping=True,
                 )
 
             else:
                 cls.engine = create_async_engine(
                     url=f"{cls.engineType['database']}+{cls.engineType['driver']}:///{cls.database}.sqlite",
-                    echo=True,
+                    echo=True if config.debug is True else False,
                     pool_pre_ping=True,
                 )
 
@@ -220,25 +220,63 @@ class interactions:
 
 
     @classmethod
-    async def newDownloaded(cls) -> None:
+    async def newDownloaded(
+        cls,
+        playlisturl: Any,
+        url: Any,
+        title: Any,
+        download_path: Any,
+        elapsed: Any
+    ) -> None:
         """
             Creates a new entry in the Downloaded Table
             and marks it downloaded with all relevent info
             ---
         """
-        pass
+        try:
+            async with cls.AsyncSession() as session:
+                newItem = Tables.Downloaded(playlist_url=playlisturl, url=url, title=title, path=download_path, elapsed=str(elapsed))
+                session.add(newItem)
+                await session.commit()
+                logger.trace(f"New Download with ID: {newItem.id}")
+
+        except Exception as e:
+            logger.error(e)
 
     @classmethod
-    async def playlistDownloaded(cls) -> None:
+    async def playlistDownloaded(
+            cls,
+            url: str,
+            name: str,
+            extractor: str
+    ) -> None:
         """
             Takes a playlist id and set's it's status to completed in the db  
 
             ---
         """
-        pass
+        try:
+            query = (
+                update(Tables.Requests)
+                .where(Tables.Requests.url==url)
+                .values(title=name, extractor=extractor, download_time=sqlfunc.now())
+
+            )
+            async with cls.AsyncSession() as session:
+
+                await session.commit()
+
+        except Exception as e:
+            logger.error(e)
+
 
     @classmethod
-    async def newUser(cls) -> None:
+    async def newUser(
+            cls,
+            username: str,
+            hash: str,
+            salt: str
+    ) -> None:
         """
             Creates a new entry in the database for a new user
             ---
@@ -246,7 +284,7 @@ class interactions:
         pass
 
     @classmethod
-    async def fetchUser(cls) -> None:
+    async def fetchUser(cls, username: str) -> None:
         """
         Fetches a user from the database
         ---
@@ -255,7 +293,7 @@ class interactions:
 
 
     @classmethod
-    async def verifyUser(cls) -> None:
+    async def verifyUser(cls, username, password) -> None:
         """
             Verify A username and hash against it in the database
             ---

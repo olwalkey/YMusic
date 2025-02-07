@@ -23,16 +23,22 @@ class AppConfig(BaseModel):
     debug: bool
     trace: bool
     ratelimit: int
+    codec: str # flac, opus, mp3, aac, alac, best
     restrictfilenames: bool
     # dbScanRate: int
     db: DbConfig
 
+codec_list: list = ['flac', 'opus', 'mp3', 'aac', 'alac', 'best']
 
 def load_config(file_path: str) -> AppConfig:
     with open(file_path, 'r') as file:
         yaml_data = yaml.safe_load(file)
         try:
-            return AppConfig(**yaml_data)
+            config = AppConfig(**yaml_data)
+            if config.codec not in codec_list:
+                logger.error(f"Not a supported codec! {config.codec}")
+                raise EnvironmentError(f"Not A supported Codec! {config.codec}")
+            return config
         except ValidationError as e:
             raise ValueError(f"Invalid configuration: {e}")
 

@@ -1,3 +1,4 @@
+import asyncio
 import yt_dlp
 from munch import munchify
 from typing import Optional, Any
@@ -149,18 +150,19 @@ try:
                             {self.Album}
                             {self.url}
                             {self.title}
-                             {self.download_path}
-                             {self.Status}""")
+                            {self.download_path}
+                            {self.Status}""")
 
             if d.status == 'finished':  # type: ignore
                 logger.trace('PostProcessor Hook finished')
                 if not self.PostProcessorStarted:
-                    self.db.markVideoDownloaded(
+                    loop = asyncio.get_running_loop()
+                    asyncio.create_task(self.db.newDownloaded(
                         playlisturl=self.playlist_url,
                         url=self.url,
                         title=self.title,
                         download_path=self.download_path,
-                        elapsed=self.time_elapse)
+                        elapsed=self.time_elapse))
 
                     self.PostProcessorStarted = True
                 self.Status = 'Finished'
@@ -180,8 +182,8 @@ try:
                 'ignoreerrors': True,
                 'postprocessors': [
                     {'key': 'FFmpegExtractAudio',
-                     'preferredcodec': 'mp3',
-                     'preferredquality': 'None'},
+                     'preferredcodec': config.codec,
+                     'preferredquality': 'best'},
                     {'add_metadata': 'True', 'key': 'FFmpegMetadata'},
                     {'already_have_thumbnail': False, 'key': 'EmbedThumbnail'}
                 ]}
@@ -225,8 +227,7 @@ try:
             with yt_dlp.YoutubeDL(opts) as ydl:
                 self.playlist_url = url
                 ydl.download(url)
-                self.db.markPlaylistDownloaded(
-                    self.playlist_url, self.Album, self.extractor)
+                asyncio.run(self.db.playlistDownloaded(self.playlist_url, str(self.Album), str(self.extractor)))
 
 
 

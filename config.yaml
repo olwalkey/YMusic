@@ -8,12 +8,13 @@ debug: True
 trace: True
 
 ratelimit: 2000000 #KiloBytes
+codec: flac #? flac, opus, mp3, aac, alac, best
 restrictfilenames: True
 
 
 
 db:
-  engine: Postgres # Postgres, sqlite, mysql, mariadb
+  engine: postgresql # Postgresql, sqlite, mysql, mariadb
   host: localhost
   port: 5432
   db: youtube
