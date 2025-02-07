@@ -146,12 +146,12 @@ try:
                 self.Status = 'Started'
                 self.time_elapse=0
 
-                logger.debug(f"""
-                            {self.Album}
-                            {self.url}
-                            {self.title}
-                            {self.download_path}
-                            {self.Status}""")
+            #    logger.debug(f"""
+            #                {self.Album}
+            #                {self.url}
+            #                {self.title}
+            #                {self.download_path}
+            #                {self.Status}""")
 
             if d.status == 'finished':  # type: ignore
                 logger.trace('PostProcessor Hook finished')
@@ -227,7 +227,8 @@ try:
             with yt_dlp.YoutubeDL(opts) as ydl:
                 self.playlist_url = url
                 ydl.download(url)
-                asyncio.run(self.db.playlistDownloaded(self.playlist_url, str(self.Album), str(self.extractor)))
+                loop = asyncio.get_running_loop()
+                asyncio.create_task((self.db.playlistDownloaded(self.playlist_url, str(self.Album), str(self.extractor))))
 
 
 

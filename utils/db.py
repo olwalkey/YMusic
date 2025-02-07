@@ -259,10 +259,11 @@ class interactions:
             query = (
                 update(Tables.Requests)
                 .where(Tables.Requests.url==url)
-                .values(title=name, extractor=extractor, download_time=sqlfunc.now())
+                .values(title=name, extractor=extractor, download_time=sqlfunc.now(), queue_status="completed")
 
             )
             async with cls.AsyncSession() as session:
+                await session.execute(query)
 
                 await session.commit()
 
