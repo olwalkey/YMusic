@@ -5,7 +5,8 @@ from typing import Optional, Any
 from loguru import logger
 import sys
 
-from .config import config
+from src.config import config
+from src.database import interactions
 from robyn import Robyn, jsonify
 
 
@@ -29,20 +30,6 @@ try:
         pass
 
     debug_init(config.trace, config.debug)
-
-    if __name__ != '__main__':
-        try:
-            from . import interactions as interactions
-        except ImportError:
-            try:
-                from . import interactions as interactions
-            except Exception as e:
-                logger.error('Failed to import db')
-                logger.error(e)
-                exit()
-    else:
-        logger.warning("Didn't try to import db")
-        pass
 
     class MyLogger:
         def debug(self, msg):
@@ -84,14 +71,13 @@ try:
         speed = None
 
         def __init__(
-            self, host: Optional[str] = None,
+            self,
+            host: Optional[str] = None,
             download_path: Optional[str] = 'downloads/',
-            port: Optional[int] = 5000,
         ):
             self.db = interactions  # type: ignore
             if not host == None:
                 self.host = host
-                self.port = port
                 self.download_path = download_path
 
         def progress_hook(self, d):

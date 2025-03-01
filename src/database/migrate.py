@@ -1,11 +1,11 @@
-from .db import DBTypes, interactions, DBInfo
+from src.config import config
+from src.database import DBTypes
+
 from alembic.config import Config
 from alembic import command
-from robyn import Robyn
-from .config import config
+
 from loguru import logger
 
-from .downloader import Downloader, robyn
 
 def migrateDb(
     engine: str = config.db.engine.lower(),
@@ -16,7 +16,7 @@ def migrateDb(
     database: str = config.db.db
 ) -> int:
     alembic_cfg = Config()
-    alembic_cfg.set_main_option("script_location", "utils/alembic")
+    alembic_cfg.set_main_option("script_location", "src/database/alembic")
     alembic_cfg.set_main_option("prepend_sys_path", ".")
     engineType = getattr(DBTypes, str(engine), None)
     logger.debug(engineType)
@@ -34,7 +34,6 @@ def migrateDb(
         alembic_cfg.set_main_option("sqlalchemy.url", f'{engineType["database"]}:///{database}.sqlite')
     else:
         logger.error(f"Incorrect database type {engineType}")
-    logger.debug(engineType)
     logger.debug(alembic_cfg.get_main_option("sqlalchemy.url"))
 
     try:
@@ -45,13 +44,3 @@ def migrateDb(
         logger.error(e)
         return 0
 
-interaction = interactions()
-
-
-
-def initapp(app: Robyn):
-    migrateDb()
-    robyn(app)
-
-
-youtube = Downloader()

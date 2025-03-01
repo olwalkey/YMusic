@@ -14,9 +14,9 @@ import argon2
 from loguru import logger
 
 
-from .config import config
+from src.config import config
 
-from . import models as Tables
+from src.database.models import Requests, Downloaded, Users
 
 
 
@@ -159,7 +159,7 @@ class interactions:
         """
         try:
             async with cls.AsyncSession() as session:
-                new_entry = Tables.Requests(url=uri)
+                new_entry = Requests(url=uri)
                 session.add(new_entry)
                 await session.commit()
                 logger.trace(f"New Request with ID: {new_entry.id}")
@@ -189,30 +189,31 @@ class interactions:
 
 
     @classmethod
-    async def fetchNextItem(cls) -> Tables.Requests | None:
+    async def fetchNextItem(cls) -> Requests | None:
         """
             Fetches next eligible item for download from the database
             ---
         """
         query = (
-            select(Tables.Requests)
-            .where(Tables.Requests.queue_status == 'queued')
-            .order_by(Tables.Requests.id.asc())
+            select(Requests)
+            .where(Requests.queue_status == 'queued')
+            .order_by(Requests.id.asc())
             .limit(1)
         )
         try:
             async with cls.AsyncSession() as session:
                 result = await session.execute(query)
-                item: Tables.Requests = result.scalar_one_or_none()
+                item: Requests = result.scalar_one_or_none()
                 logger.debug(f"""
                              result: {result.__dict__}
                              item: {item}
                 """)
-                if isinstance(item, Tables.Requests):
+
+                if isinstance(item, Requests):
                     logger.trace(item)
                     return item
-                else:
-                    raise KeyError
+                elif item == None:
+                    return
 
         except Exception as e:
             logger.error(f"Failed to fetch next item {e}")
@@ -235,7 +236,7 @@ class interactions:
         """
         try:
             async with cls.AsyncSession() as session:
-                newItem = Tables.Downloaded(playlist_url=playlisturl, url=url, title=title, path=download_path, elapsed=str(elapsed))
+                newItem = Downloaded(playlist_url=playlisturl, url=url, title=title, path=download_path, elapsed=str(elapsed))
                 session.add(newItem)
                 await session.commit()
                 logger.trace(f"New Download with ID: {newItem.id}")
@@ -257,8 +258,8 @@ class interactions:
         """
         try:
             query = (
-                update(Tables.Requests)
-                .where(Tables.Requests.url==url)
+                update(Requests)
+                .where(Requests.url==url)
                 .values(title=name, extractor=extractor, download_time=sqlfunc.now(), queue_status="completed")
 
             )

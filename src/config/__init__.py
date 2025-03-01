@@ -23,7 +23,7 @@ class AppConfig(BaseModel):
     debug: bool
     trace: bool
     ratelimit: int
-    codec: str # flac, opus, mp3, aac, alac, best
+    codec: str
     restrictfilenames: bool
     # dbScanRate: int
     db: DbConfig
@@ -44,6 +44,7 @@ def load_config(file_path: str) -> AppConfig:
 
 
 file_path = 'config.yaml'
+
 try:
     config = load_config(file_path)
 except ValueError as e:

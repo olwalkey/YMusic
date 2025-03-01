@@ -13,8 +13,11 @@ from robyn import __version__ as robynversion
 from sqlalchemy import __version__ as alchversion
 from alembic import __version__ as alembicversion
 from yt_dlp.version import __version__ as ytversion
-import utils
-from utils.db import interactions
+
+from src.database import interactions
+from src.downloader import Downloader
+from src.config import config
+import src.utils as utils
 
 #logging.basicConfig(level=logging.ERROR)
 #logger = logging.getLogger('apscheduler')
@@ -28,6 +31,8 @@ handler.setLevel(logging.NOTSET)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 apscheduler_logger.addHandler(handler)
+if not config.debug or config.trace:
+    logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
 
 app = Robyn(__file__)
 
@@ -42,7 +47,6 @@ utils.initapp(app)
 async def startup_handler():
     try:
         await interactions.connect()
-        utils.initapp(app)
         scheduler = AsyncIOScheduler()
 
         scheduler.add_job(scanDatabase, 'interval', seconds=5)
@@ -52,9 +56,10 @@ async def startup_handler():
         logger.error("Failed to Start")
 
 async def scanDatabase():
-    next_item = await utils.interactions.fetchNextItem()
+    next_item = await interactions.fetchNextItem()
     if next_item is not None:
-        utils.youtube.startDownload(next_item.url)
+        manager = Downloader()
+        manager.startDownload(next_item.url)
 
 
 @app.get("/info")
@@ -120,7 +125,7 @@ async def download(request, path_params: PathParams):
     """Takes a url and downloads the supplied video/song/playlist"""
     url: str = path_params['url']
     logger.error(url)
-    return await utils.interactions.createEntry(url)
+    return await interactions.createEntry(url)
 
 
 @app.post("/login")
@@ -135,4 +140,3 @@ async def register():
 
 
 
-app.start(port=8000, host="0.0.0.0")
